@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npm start)",
+      "Bash(npm uninstall:*)",
+      "Bash(move /Y ProductsFunctional.jsx Products.jsx)"
+    ]
+  }
+}
