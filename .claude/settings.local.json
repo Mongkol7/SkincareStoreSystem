@@ -5,7 +5,9 @@
       "Bash(npx tailwindcss:*)",
       "Bash(npm start)",
       "Bash(npm uninstall:*)",
-      "Bash(move /Y ProductsFunctional.jsx Products.jsx)"
+      "Bash(move /Y ProductsFunctional.jsx Products.jsx)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd complete frontend application with functional pages\n\n- Implemented Products page with full CRUD operations\n- Implemented Staff Management with full CRUD operations  \n- Added Vercel deployment configuration\n- Black & white minimalist design theme\n- React Router setup with role-based authentication\n- Glass morphism UI components\n- All navigation and workflows functional\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ]
   }
 }
