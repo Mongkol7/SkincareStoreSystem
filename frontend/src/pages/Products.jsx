@@ -611,7 +611,7 @@ const Products = () => {
           </div>
         </form>
       </Modal>
-    </div>
+    </>
   );
 };
 

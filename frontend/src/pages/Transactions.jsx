@@ -211,6 +211,7 @@ const Transactions = () => {
   ];
 
   return (
+    <>
     <div className="min-h-screen">
       <div className="flex gap-0">
         <Sidebar
@@ -438,7 +439,7 @@ const Transactions = () => {
           </div>
         )}
       </Modal>
-    </div>
+    </>
   );
 };
 

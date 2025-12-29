@@ -267,6 +267,7 @@ const PurchaseOrders = () => {
     .reduce((sum, po) => sum + po.totalAmount, 0);
 
   return (
+    <>
     <div className="min-h-screen">
       <div className="flex gap-0">
         <Sidebar
@@ -571,7 +572,7 @@ const PurchaseOrders = () => {
           </div>
         )}
       </Modal>
-    </div>
+    </>
   );
 };
 
