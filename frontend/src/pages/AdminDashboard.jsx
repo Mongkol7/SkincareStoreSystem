@@ -126,46 +126,46 @@ const AdminDashboard = () => {
         />
 
         <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
-            <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
+          <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">
-                Admin Dashboard
-              </h2>
-              <p className="text-white/60 text-sm">
-                Monitor and manage all system activities
-              </p>
-            </div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Admin Dashboard
+            </h2>
+            <p className="text-white/60 text-sm">
+              Monitor and manage all system activities
+            </p>
+          </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <StatsCard
-                icon={<CurrencyDollarIcon className="w-6 h-6 text-white" />}
-                label="Today's Sales"
-                value={`$${stats.todaySales.toLocaleString()}`}
-                trend="up"
-                trendValue="12%"
-              />
-              <StatsCard
-                icon={<ShoppingCartIcon className="w-6 h-6 text-white" />}
-                label="Transactions"
-                value={stats.transactions}
-                trend="up"
-                trendValue="8%"
-              />
-              <StatsCard
-                icon={<UsersIcon className="w-6 h-6 text-white" />}
-                label="Active Staff"
-                value={stats.activeStaff}
-              />
-              <StatsCard
-                icon={<CubeIcon className="w-6 h-6 text-white" />}
-                label="Low Stock Items"
-                value={stats.lowStockItems}
-                trend="down"
-                trendValue="2"
-              />
-            </div>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StatsCard
+              icon={<CurrencyDollarIcon className="w-6 h-6 text-white" />}
+              label="Today's Sales"
+              value={`$${stats.todaySales.toLocaleString()}`}
+              trend="up"
+              trendValue="12%"
+            />
+            <StatsCard
+              icon={<ShoppingCartIcon className="w-6 h-6 text-white" />}
+              label="Transactions"
+              value={stats.transactions}
+              trend="up"
+              trendValue="8%"
+            />
+            <StatsCard
+              icon={<UsersIcon className="w-6 h-6 text-white" />}
+              label="Active Staff"
+              value={stats.activeStaff}
+            />
+            <StatsCard
+              icon={<CubeIcon className="w-6 h-6 text-white" />}
+              label="Low Stock Items"
+              value={stats.lowStockItems}
+              trend="down"
+              trendValue="2"
+            />
+          </div>
 
           {/* Tabs */}
           <Tabs tabs={tabContent} />

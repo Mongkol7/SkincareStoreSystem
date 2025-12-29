@@ -44,14 +44,14 @@ const CashierDashboard = () => {
         />
 
         <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
-            <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
+          <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
-            {/* Welcome Section */}
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">
+          {/* Welcome Section */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
                 Welcome back, {user?.name}!
               </h2>
-              <p className="text-white/60 text-sm">
+            <p className="text-white/60 text-sm">
                 {new Date().toLocaleDateString('en-US', {
                   weekday: 'long',
                   year: 'numeric',
@@ -61,7 +61,7 @@ const CashierDashboard = () => {
               </p>
             </div>
 
-            {/* Current Batch Status */}
+          {/* Current Batch Status */}
             {currentBatch.status === 'Open' ? (
               <div className="glass-card p-6 mb-6 border-2 border-success-500/30">
                 <div className="flex items-center justify-between flex-wrap gap-4">
@@ -96,7 +96,7 @@ const CashierDashboard = () => {
                       Close Batch
                     </Button>
                   </div>
-                </div>
+              </div>
               </div>
             ) : (
               <div className="glass-card p-6 mb-6 text-center">
@@ -106,7 +106,7 @@ const CashierDashboard = () => {
                 </h3>
                 <p className="text-white/60 mb-4 text-sm">
                   Start a new batch to begin processing sales
-                </p>
+              </p>
                 <Button
                   variant="success"
                   onClick={() => navigate('/cashier/open-batch')}
@@ -117,31 +117,31 @@ const CashierDashboard = () => {
               </div>
             )}
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <StatsCard
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <StatsCard
                 icon={<CurrencyDollarIcon className="w-6 h-6 text-white" />}
                 label="Today's Sales"
                 value={`$${todayStats.sales.toFixed(2)}`}
                 trend="up"
                 trendValue="12%"
               />
-              <StatsCard
+            <StatsCard
                 icon={<ShoppingCartIcon className="w-6 h-6 text-white" />}
                 label="Transactions"
                 value={todayStats.transactions}
                 trend="up"
                 trendValue="8%"
               />
-              <StatsCard
+            <StatsCard
                 icon={<ChartBarIcon className="w-6 h-6 text-white" />}
                 label="Avg Transaction"
                 value={`$${todayStats.avgTransaction.toFixed(2)}`}
               />
             </div>
 
-            {/* Recent Transactions */}
-            <Card>
+          {/* Recent Transactions */}
+          <Card>
               <div className="card-header">
                 <h3 className="card-title">Recent Transactions</h3>
               </div>

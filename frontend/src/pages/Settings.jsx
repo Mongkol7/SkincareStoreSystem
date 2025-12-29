@@ -42,7 +42,7 @@ const Settings = () => {
         <Card>
           <CardHeader title="General Settings" />
           <div className="space-y-4 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-2">
                   Store Name
@@ -65,7 +65,7 @@ const Settings = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-2">
                   Phone
@@ -88,7 +88,7 @@ const Settings = () => {
               </div>
             </div>
 
-            <div>
+          <div>
               <label className="block text-sm font-medium text-white/80 mb-2">
                 Address
               </label>
@@ -99,7 +99,7 @@ const Settings = () => {
               />
             </div>
 
-            <div>
+          <div>
               <label className="block text-sm font-medium text-white/80 mb-2">
                 Tax Rate (%)
               </label>
@@ -111,9 +111,9 @@ const Settings = () => {
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="secondary">Cancel</Button>
-              <Button variant="primary">Save Changes</Button>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="secondary">Cancel</Button>
+            <Button variant="primary">Save Changes</Button>
             </div>
           </div>
         </Card>
@@ -126,48 +126,48 @@ const Settings = () => {
         <Card>
           <CardHeader title="Store Information" />
           <div className="p-6 space-y-4">
-            <div className="glass-card p-6">
+          <div className="glass-card p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Business Details</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-white/60">Registration Number</span>
                   <span className="text-white">REG-2024-001234</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60">Tax ID</span>
                   <span className="text-white">TAX-9876543210</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60">Business Type</span>
                   <span className="text-white">Retail - Skincare</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60">Established</span>
                   <span className="text-white">January 2023</span>
-                </div>
+              </div>
               </div>
             </div>
 
-            <div className="glass-card p-6">
+          <div className="glass-card p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Operating Hours</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-white/60">Monday - Friday</span>
                   <span className="text-white">9:00 AM - 8:00 PM</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60">Saturday</span>
                   <span className="text-white">10:00 AM - 6:00 PM</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60">Sunday</span>
                   <span className="text-white">Closed</span>
-                </div>
+              </div>
               </div>
             </div>
 
-            <div className="flex justify-end pt-4">
-              <Button variant="primary">Update Store Info</Button>
+          <div className="flex justify-end pt-4">
+            <Button variant="primary">Update Store Info</Button>
             </div>
           </div>
         </Card>
@@ -192,7 +192,7 @@ const Settings = () => {
                   <p className="text-xs text-white/60">
                     Receive notifications about {label.toLowerCase()}
                   </p>
-                </div>
+              </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -210,8 +210,8 @@ const Settings = () => {
               </div>
             ))}
 
-            <div className="flex justify-end pt-4">
-              <Button variant="primary">Save Preferences</Button>
+          <div className="flex justify-end pt-4">
+            <Button variant="primary">Save Preferences</Button>
             </div>
           </div>
         </Card>
@@ -224,7 +224,7 @@ const Settings = () => {
         <Card>
           <CardHeader title="Account Settings" />
           <div className="p-6 space-y-6">
-            <div className="glass-card p-6">
+          <div className="glass-card p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Change Password</h3>
               <div className="space-y-4">
                 <div>
@@ -232,31 +232,31 @@ const Settings = () => {
                     Current Password
                   </label>
                   <Input type="password" placeholder="Enter current password" />
-                </div>
+              </div>
                 <div>
                   <label className="block text-sm font-medium text-white/80 mb-2">
                     New Password
                   </label>
                   <Input type="password" placeholder="Enter new password" />
-                </div>
+              </div>
                 <div>
                   <label className="block text-sm font-medium text-white/80 mb-2">
                     Confirm New Password
                   </label>
                   <Input type="password" placeholder="Confirm new password" />
-                </div>
+              </div>
                 <div className="flex justify-end">
                   <Button variant="primary">Update Password</Button>
-                </div>
+              </div>
               </div>
             </div>
 
-            <div className="glass-card p-6 border border-danger-500/20">
+          <div className="glass-card p-6 border border-danger-500/20">
               <h3 className="text-lg font-semibold text-danger-400 mb-2">Danger Zone</h3>
-              <p className="text-sm text-white/60 mb-4">
+            <p className="text-sm text-white/60 mb-4">
                 Irreversible actions that affect your account
               </p>
-              <Button variant="danger">Deactivate Account</Button>
+            <Button variant="danger">Deactivate Account</Button>
             </div>
           </div>
         </Card>
@@ -276,18 +276,17 @@ const Settings = () => {
         <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
                 Settings
               </h2>
-              <p className="text-white/60 text-sm">
+            <p className="text-white/60 text-sm">
                 Configure system preferences and account settings
               </p>
             </div>
 
-            <Tabs tabs={tabContent} />
+          <Tabs tabs={tabContent} />
           </div>
-        </div>
       </div>
     </div>
   );

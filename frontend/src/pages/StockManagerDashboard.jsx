@@ -174,7 +174,6 @@ const StockManagerDashboard = () => {
             />
           </Card>
         </div>
-        </div>
       </div>
     </div>
   );

@@ -272,6 +272,7 @@ const Products = () => {
   ];
 
   return (
+    <>
     <div className="min-h-screen">
       <div className="flex gap-0">
         <Sidebar

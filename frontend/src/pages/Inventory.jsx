@@ -215,7 +215,7 @@ const Inventory = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-64"
                   />
-                </div>
+              </div>
                 <Button variant="secondary" size="sm">
                   <ArrowPathIcon className="w-4 h-4 mr-2" />
                   Sync
@@ -234,7 +234,7 @@ const Inventory = () => {
           <CardHeader
             title="Recent Inventory Movements"
             action={
-              <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm">
                 <DocumentArrowDownIcon className="w-4 h-4 mr-2" />
                 Export
               </Button>
@@ -264,17 +264,17 @@ const Inventory = () => {
         <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
                 Inventory Management
               </h2>
-              <p className="text-white/60 text-sm">
+            <p className="text-white/60 text-sm">
                 Monitor stock levels and inventory movements
               </p>
             </div>
 
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {/* Summary Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="glass-card p-4">
                 <p className="text-xs text-white/60 mb-1">Total Products</p>
                 <p className="text-2xl font-bold text-white">{totalProducts}</p>
@@ -293,10 +293,9 @@ const Inventory = () => {
               </div>
             </div>
 
-            {/* Tabs */}
-            <Tabs tabs={tabContent} />
+          {/* Tabs */}
+          <Tabs tabs={tabContent} />
           </div>
-        </div>
       </div>
     </div>
   );

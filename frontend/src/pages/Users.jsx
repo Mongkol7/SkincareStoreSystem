@@ -154,17 +154,17 @@ const Users = () => {
         <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
                 User Accounts
               </h2>
-              <p className="text-white/60 text-sm">
+            <p className="text-white/60 text-sm">
                 Manage system user accounts and permissions
               </p>
             </div>
 
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {/* Summary Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="glass-card p-4">
                 <p className="text-xs text-white/60 mb-1">Total Users</p>
                 <p className="text-2xl font-bold text-white">{users.length}</p>
@@ -183,8 +183,8 @@ const Users = () => {
               </div>
             </div>
 
-            {/* User Accounts Table */}
-            <Card>
+          {/* User Accounts Table */}
+          <Card>
               <CardHeader
                 title="System Users"
                 action={
@@ -209,8 +209,8 @@ const Users = () => {
               <Table columns={columns} data={users} />
             </Card>
 
-            {/* Security Notice */}
-            <div className="mt-6 glass-card p-4 border border-warning-500/20">
+          {/* Security Notice */}
+          <div className="mt-6 glass-card p-4 border border-warning-500/20">
               <div className="flex items-start gap-3">
                 <KeyIcon className="w-5 h-5 text-warning-400 mt-0.5" />
                 <div>
@@ -218,11 +218,10 @@ const Users = () => {
                   <p className="text-xs text-white/60">
                     Regularly review user access and permissions. Disable inactive accounts and enforce strong password policies.
                   </p>
-                </div>
+              </div>
               </div>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );

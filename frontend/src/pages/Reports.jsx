@@ -394,8 +394,7 @@ const Reports = () => {
             </div>
 
             {/* Report Tabs */}
-            <Tabs tabs={tabContent} />
-          </div>
+          <Tabs tabs={tabContent} />
         </div>
       </div>
     </div>

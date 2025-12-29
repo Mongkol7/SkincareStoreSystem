@@ -147,68 +147,67 @@ const Batches = () => {
         <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">
-                My Batches
-              </h2>
-              <p className="text-white/60 text-sm">
-                View your batch history and performance
-              </p>
-            </div>
-
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="glass-card p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <ClockIcon className="w-5 h-5 text-primary-400" />
-                  <p className="text-xs text-white/60">Total Batches</p>
-                </div>
-                <p className="text-2xl font-bold text-white">{batches.length}</p>
-              </div>
-
-              <div className="glass-card p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <CurrencyDollarIcon className="w-5 h-5 text-success-400" />
-                  <p className="text-xs text-white/60">Total Sales</p>
-                </div>
-                <p className="text-2xl font-bold text-success-400">${totalSales.toFixed(2)}</p>
-              </div>
-
-              <div className="glass-card p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <CheckCircleIcon className="w-5 h-5 text-primary-400" />
-                  <p className="text-xs text-white/60">Total Transactions</p>
-                </div>
-                <p className="text-2xl font-bold text-white">{totalTransactions}</p>
-              </div>
-
-              <div className="glass-card p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <CurrencyDollarIcon className="w-5 h-5 text-warning-400" />
-                  <p className="text-xs text-white/60">Avg. Sales/Batch</p>
-                </div>
-                <p className="text-2xl font-bold text-warning-400">${avgSalesPerBatch.toFixed(2)}</p>
-              </div>
-            </div>
-
-            {/* Batches Table */}
-            <Card>
-              <CardHeader
-                title="Batch History"
-                action={
-                  <div className="flex gap-2">
-                    <Button variant="secondary" size="sm">
-                      This Week
-                    </Button>
-                    <Button variant="secondary" size="sm">
-                      This Month
-                    </Button>
-                  </div>
-                }
-              />
-              <Table columns={columns} data={batches} />
-            </Card>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
+              My Batches
+            </h2>
+            <p className="text-white/60 text-sm">
+              View your batch history and performance
+            </p>
           </div>
+
+          {/* Summary Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="glass-card p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <ClockIcon className="w-5 h-5 text-primary-400" />
+                <p className="text-xs text-white/60">Total Batches</p>
+              </div>
+              <p className="text-2xl font-bold text-white">{batches.length}</p>
+            </div>
+
+            <div className="glass-card p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <CurrencyDollarIcon className="w-5 h-5 text-success-400" />
+                <p className="text-xs text-white/60">Total Sales</p>
+              </div>
+              <p className="text-2xl font-bold text-success-400">${totalSales.toFixed(2)}</p>
+            </div>
+
+            <div className="glass-card p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <CheckCircleIcon className="w-5 h-5 text-primary-400" />
+                <p className="text-xs text-white/60">Total Transactions</p>
+              </div>
+              <p className="text-2xl font-bold text-white">{totalTransactions}</p>
+            </div>
+
+            <div className="glass-card p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <CurrencyDollarIcon className="w-5 h-5 text-warning-400" />
+                <p className="text-xs text-white/60">Avg. Sales/Batch</p>
+              </div>
+              <p className="text-2xl font-bold text-warning-400">${avgSalesPerBatch.toFixed(2)}</p>
+            </div>
+          </div>
+
+          {/* Batches Table */}
+          <Card>
+            <CardHeader
+              title="Batch History"
+              action={
+                <div className="flex gap-2">
+                  <Button variant="secondary" size="sm">
+                    This Week
+                  </Button>
+                  <Button variant="secondary" size="sm">
+                    This Month
+                  </Button>
+                </div>
+              }
+            />
+            <Table columns={columns} data={batches} />
+          </Card>
         </div>
       </div>
     </div>

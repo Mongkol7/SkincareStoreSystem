@@ -274,17 +274,17 @@ const Staff = () => {
         <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
                 Staff Management
               </h2>
-              <p className="text-white/60 text-sm">
+            <p className="text-white/60 text-sm">
                 Manage staff members and their roles
               </p>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="glass-card p-4">
                 <p className="text-xs text-white/60 mb-1">Total Staff</p>
                 <p className="text-2xl font-bold text-white">{staffList.length}</p>
@@ -293,23 +293,23 @@ const Staff = () => {
                 <p className="text-xs text-white/60 mb-1">Active</p>
                 <p className="text-2xl font-bold text-white">
                   {staffList.filter(s => s.status === 'Active').length}
-                </p>
+              </p>
               </div>
               <div className="glass-card p-4">
                 <p className="text-xs text-white/60 mb-1">On Leave</p>
                 <p className="text-2xl font-bold text-white/80">
                   {staffList.filter(s => s.status === 'On Leave').length}
-                </p>
+              </p>
               </div>
               <div className="glass-card p-4">
                 <p className="text-xs text-white/60 mb-1">Departments</p>
                 <p className="text-2xl font-bold text-white">
                   {new Set(staffList.map(s => s.department)).size}
-                </p>
+              </p>
               </div>
             </div>
 
-            {/* Filters */}
+          {/* Filters */}
             {showFilters && (
               <Card className="mb-4">
                 <div className="p-6">
@@ -352,11 +352,11 @@ const Staff = () => {
                       </Button>
                     </div>
                   </div>
-                </div>
+              </div>
               </Card>
             )}
 
-            <Card>
+          <Card>
               <CardHeader
                 title="All Staff Members"
                 action={
@@ -386,11 +386,10 @@ const Staff = () => {
               {filteredStaff.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-white/60">No staff members found</p>
-                </div>
+              </div>
               )}
             </Card>
           </div>
-        </div>
       </div>
 
       {/* Add Staff Modal */}
@@ -402,7 +401,7 @@ const Staff = () => {
       >
         <form onSubmit={handleAddStaff}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Full Name *</label>
               <Input
                 required
@@ -411,7 +410,7 @@ const Staff = () => {
                 placeholder="e.g., John Doe"
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Email *</label>
               <Input
                 required
@@ -421,7 +420,7 @@ const Staff = () => {
                 placeholder="email@example.com"
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Role *</label>
               <select
                 required
@@ -436,7 +435,7 @@ const Staff = () => {
                 <option value="Admin">Admin</option>
               </select>
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Department *</label>
               <Input
                 required
@@ -445,7 +444,7 @@ const Staff = () => {
                 placeholder="e.g., Sales"
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Phone *</label>
               <Input
                 required
@@ -455,7 +454,7 @@ const Staff = () => {
                 placeholder="+1 234-567-8900"
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Join Date *</label>
               <Input
                 required
@@ -464,7 +463,7 @@ const Staff = () => {
                 onChange={(e) => setFormData({...formData, joinDate: e.target.value})}
               />
             </div>
-            <div className="md:col-span-2">
+          <div className="md:col-span-2">
               <label className="block text-sm text-white/70 mb-2">Address</label>
               <Input
                 value={formData.address}
@@ -472,7 +471,7 @@ const Staff = () => {
                 placeholder="Full address"
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Emergency Contact</label>
               <Input
                 type="tel"
@@ -481,7 +480,7 @@ const Staff = () => {
                 placeholder="+1 234-567-8900"
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Salary ($)</label>
               <Input
                 type="number"
@@ -512,7 +511,7 @@ const Staff = () => {
       >
         <form onSubmit={handleEditStaff}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Full Name *</label>
               <Input
                 required
@@ -520,7 +519,7 @@ const Staff = () => {
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Email *</label>
               <Input
                 required
@@ -529,7 +528,7 @@ const Staff = () => {
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Role *</label>
               <select
                 required
@@ -543,7 +542,7 @@ const Staff = () => {
                 <option value="Admin">Admin</option>
               </select>
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Department *</label>
               <Input
                 required
@@ -551,7 +550,7 @@ const Staff = () => {
                 onChange={(e) => setFormData({...formData, department: e.target.value})}
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Phone *</label>
               <Input
                 required
@@ -560,7 +559,7 @@ const Staff = () => {
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Join Date *</label>
               <Input
                 required
@@ -569,14 +568,14 @@ const Staff = () => {
                 onChange={(e) => setFormData({...formData, joinDate: e.target.value})}
               />
             </div>
-            <div className="md:col-span-2">
+          <div className="md:col-span-2">
               <label className="block text-sm text-white/70 mb-2">Address</label>
               <Input
                 value={formData.address}
                 onChange={(e) => setFormData({...formData, address: e.target.value})}
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Emergency Contact</label>
               <Input
                 type="tel"
@@ -584,7 +583,7 @@ const Staff = () => {
                 onChange={(e) => setFormData({...formData, emergencyContact: e.target.value})}
               />
             </div>
-            <div>
+          <div>
               <label className="block text-sm text-white/70 mb-2">Salary ($)</label>
               <Input
                 type="number"
@@ -614,51 +613,51 @@ const Staff = () => {
       >
         {selectedStaff && (
           <div className="space-y-6">
-            <div className="glass-card p-6">
+          <div className="glass-card p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Personal Information</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-white/60 text-sm">Name</span>
                   <span className="text-white font-medium">{selectedStaff.name}</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60 text-sm">Email</span>
                   <span className="text-white">{selectedStaff.email}</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60 text-sm">Phone</span>
                   <span className="text-white">{selectedStaff.phone}</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60 text-sm">Address</span>
                   <span className="text-white text-right">{selectedStaff.address}</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60 text-sm">Emergency Contact</span>
                   <span className="text-white">{selectedStaff.emergencyContact}</span>
-                </div>
+              </div>
               </div>
             </div>
 
-            <div className="glass-card p-6">
+          <div className="glass-card p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Employment Details</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-white/60 text-sm">Role</span>
                   <span className="badge badge-primary">{selectedStaff.role}</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60 text-sm">Department</span>
                   <span className="text-white">{selectedStaff.department}</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60 text-sm">Join Date</span>
                   <span className="text-white">{selectedStaff.joinDate}</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60 text-sm">Salary</span>
                   <span className="text-white font-semibold">${selectedStaff.salary?.toLocaleString()}</span>
-                </div>
+              </div>
                 <div className="flex justify-between">
                   <span className="text-white/60 text-sm">Status</span>
                   <span className={`badge ${
@@ -666,19 +665,19 @@ const Staff = () => {
                   }`}>
                     {selectedStaff.status}
                   </span>
-                </div>
+              </div>
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <Button
+          <div className="flex gap-3">
+            <Button
                 variant="secondary"
                 className="flex-1"
                 onClick={() => toggleStaffStatus(selectedStaff)}
               >
                 {selectedStaff.status === 'Active' ? 'Mark On Leave' : 'Mark Active'}
               </Button>
-              <Button
+            <Button
                 variant="primary"
                 className="flex-1"
                 onClick={() => {

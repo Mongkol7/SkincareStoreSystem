@@ -139,43 +139,43 @@ const HRDashboard = () => {
         <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
                 Staff Management
               </h2>
-              <p className="text-white/60 text-sm">
+            <p className="text-white/60 text-sm">
                 Manage staff information and user accounts
               </p>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <StatsCard
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StatsCard
                 icon={<UsersIcon className="w-6 h-6 text-white" />}
                 label="Total Staff"
                 value={stats.totalStaff}
               />
-              <StatsCard
+            <StatsCard
                 icon={<UsersIcon className="w-6 h-6 text-white" />}
                 label="Active Staff"
                 value={stats.activeStaff}
               />
-              <StatsCard
+            <StatsCard
                 icon={<UserPlusIcon className="w-6 h-6 text-white" />}
                 label="New This Month"
                 value={stats.newThisMonth}
                 trend="up"
                 trendValue="2"
               />
-              <StatsCard
+            <StatsCard
                 icon={<UsersIcon className="w-6 h-6 text-white" />}
                 label="Pending Accounts"
                 value={stats.pendingAccounts}
               />
             </div>
 
-            {/* Staff List */}
-            <Card>
+          {/* Staff List */}
+          <Card>
               <CardHeader
                 title="Staff Directory"
                 action={
@@ -200,7 +200,7 @@ const HRDashboard = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="input pl-12"
                   />
-                </div>
+              </div>
               </div>
 
               <Table
@@ -210,7 +210,6 @@ const HRDashboard = () => {
               />
             </Card>
           </div>
-        </div>
       </div>
     </div>
   );
