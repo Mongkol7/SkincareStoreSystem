@@ -10,7 +10,14 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nAdd complete frontend application with functional pages\n\n- Implemented Products page with full CRUD operations\n- Implemented Staff Management with full CRUD operations  \n- Added Vercel deployment configuration\n- Black & white minimalist design theme\n- React Router setup with role-based authentication\n- Glass morphism UI components\n- All navigation and workflows functional\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git rm:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nAdd complete frontend application for Vercel deployment\n\n- Remove frontend as Git submodule and add as regular directory\n- Add all React components and pages (Products, Staff, Transactions, etc.)\n- Include Tailwind CSS configuration with black & white theme\n- Add authentication context and protected routes\n- Include all necessary build configuration files\n\nThis enables proper deployment to Vercel with frontend in subfolder.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd complete frontend application with functional pages\n\n- Implemented Products page with full CRUD operations\n- Implemented Staff Management with full CRUD operations  \n- Implemented Transactions page with view details and filters\n- Implemented Purchase Orders with approval workflow\n- Implemented Reports page with analytics charts (bar charts, grouped bars, horizontal bars)\n- Added comprehensive data visualization for sales analytics\n- Black & white minimalist design theme\n- All navigation and workflows functional\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)",
+      "Bash(for file in HRDashboard.jsx Inventory.jsx Settings.jsx Staff.jsx Users.jsx Reports.jsx)",
+      "Bash(do echo \"=== $file ===\" tail -10 \"$file\")",
+      "Bash(cat:*)",
+      "Bash(npm test:*)"
     ]
   }
 }
