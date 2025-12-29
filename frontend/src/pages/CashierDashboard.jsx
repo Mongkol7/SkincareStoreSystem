@@ -35,18 +35,15 @@ const CashierDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex gap-6">
-          {/* Sidebar */}
-          <Sidebar
-            isOpen={isSidebarOpen}
-            onClose={() => setIsSidebarOpen(false)}
-            userRole={user?.roles?.[0]?.name}
-          />
+    <div className="min-h-screen">
+      <div className="flex gap-0">
+        <Sidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          userRole={user?.roles?.[0]?.name}
+        />
 
-          {/* Main Content */}
-          <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
             <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
             {/* Welcome Section */}
@@ -171,9 +168,8 @@ const CashierDashboard = () => {
                     </div>
                   </div>
                 ))}
-              </div>
-            </Card>
-          </div>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

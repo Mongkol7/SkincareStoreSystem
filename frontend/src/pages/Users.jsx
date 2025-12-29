@@ -143,17 +143,16 @@ const Users = () => {
   const adminUsers = users.filter(u => u.role === 'Admin').length;
 
   return (
-    <div className="min-h-screen p-4 lg:p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex gap-6">
-          <Sidebar
-            isOpen={isSidebarOpen}
-            onClose={() => setIsSidebarOpen(false)}
-            userRole={user?.roles?.[0]?.name}
-          />
+    <div className="min-h-screen">
+      <div className="flex gap-0">
+        <Sidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          userRole={user?.roles?.[0]?.name}
+        />
 
-          <div className="flex-1 min-w-0">
-            <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
+        <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
+          <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-white mb-2">
