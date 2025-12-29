@@ -100,80 +100,80 @@ const StockManagerDashboard = () => {
         <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">
-                Inventory Management
-              </h2>
-              <p className="text-white/60 text-sm">
-                Monitor stock levels and manage purchase orders
-              </p>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <StatsCard
-                icon={<CubeIcon className="w-6 h-6 text-white" />}
-                label="Total Products"
-                value={stats.totalProducts}
-              />
-              <StatsCard
-                icon={<ExclamationTriangleIcon className="w-6 h-6 text-white" />}
-                label="Low Stock Alert"
-                value={stats.lowStock}
-                trend="down"
-                trendValue="2"
-              />
-              <StatsCard
-                icon={<ShoppingBagIcon className="w-6 h-6 text-white" />}
-                label="Pending POs"
-                value={stats.pendingPO}
-              />
-              <StatsCard
-                icon={<CheckCircleIcon className="w-6 h-6 text-white" />}
-                label="Received Today"
-                value={stats.receivedToday}
-              />
-            </div>
-
-            {/* Low Stock Alert */}
-            <Card className="mb-6 border-2 border-warning-500/30">
-              <CardHeader
-                title={
-                  <div className="flex items-center gap-2">
-                    <ExclamationTriangleIcon className="w-5 h-5 text-warning-400" />
-                    Low Stock Alert
-                  </div>
-                }
-                action={
-                  <Button variant="warning" size="sm">
-                    Create Bulk PO
-                  </Button>
-                }
-              />
-              <Table columns={productColumns} data={lowStockProducts} />
-            </Card>
-
-            {/* Purchase Orders */}
-            <Card>
-              <CardHeader
-                title="Recent Purchase Orders"
-                action={
-                  <Button
-                    variant="success"
-                    size="sm"
-                    onClick={() => navigate('/stock-manager/create-po')}
-                  >
-                    Create New PO
-                  </Button>
-                }
-              />
-              <Table
-                columns={poColumns}
-                data={purchaseOrders}
-                onRowClick={(row) => navigate(`/stock-manager/po/${row.id}`)}
-              />
-            </Card>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Inventory Management
+            </h2>
+            <p className="text-white/60 text-sm">
+              Monitor stock levels and manage purchase orders
+            </p>
           </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <StatsCard
+              icon={<CubeIcon className="w-6 h-6 text-white" />}
+              label="Total Products"
+              value={stats.totalProducts}
+            />
+            <StatsCard
+              icon={<ExclamationTriangleIcon className="w-6 h-6 text-white" />}
+              label="Low Stock Alert"
+              value={stats.lowStock}
+              trend="down"
+              trendValue="2"
+            />
+            <StatsCard
+              icon={<ShoppingBagIcon className="w-6 h-6 text-white" />}
+              label="Pending POs"
+              value={stats.pendingPO}
+            />
+            <StatsCard
+              icon={<CheckCircleIcon className="w-6 h-6 text-white" />}
+              label="Received Today"
+              value={stats.receivedToday}
+            />
+          </div>
+
+          {/* Low Stock Alert */}
+          <Card className="mb-6 border-2 border-warning-500/30">
+            <CardHeader
+              title={
+                <div className="flex items-center gap-2">
+                  <ExclamationTriangleIcon className="w-5 h-5 text-warning-400" />
+                  Low Stock Alert
+                </div>
+              }
+              action={
+                <Button variant="warning" size="sm">
+                  Create Bulk PO
+                </Button>
+              }
+            />
+            <Table columns={productColumns} data={lowStockProducts} />
+          </Card>
+
+          {/* Purchase Orders */}
+          <Card>
+            <CardHeader
+              title="Recent Purchase Orders"
+              action={
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={() => navigate('/stock-manager/create-po')}
+                >
+                  Create New PO
+                </Button>
+              }
+            />
+            <Table
+              columns={poColumns}
+              data={purchaseOrders}
+              onRowClick={(row) => navigate(`/stock-manager/po/${row.id}`)}
+            />
+          </Card>
+        </div>
         </div>
       </div>
     </div>
