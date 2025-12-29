@@ -147,13 +147,6 @@ const CashierDashboard = () => {
             <Card>
               <div className="card-header">
                 <h3 className="card-title">Recent Transactions</h3>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => navigate('/cashier/transactions')}
-                >
-                  View All
-                </Button>
               </div>
 
               <div className="space-y-3">

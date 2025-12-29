@@ -80,14 +80,7 @@ const AdminDashboard = () => {
       icon: <ShoppingCartIcon className="w-4 h-4" />,
       content: (
         <Card>
-          <CardHeader
-            title="Recent Transactions"
-            action={
-              <Button variant="secondary" size="sm">
-                View All
-              </Button>
-            }
-          />
+          <CardHeader title="Recent Transactions" />
           <Table columns={transactionColumns} data={recentTransactions} />
         </Card>
       ),
