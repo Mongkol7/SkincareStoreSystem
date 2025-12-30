@@ -5,6 +5,8 @@ import Sidebar from '../components/common/Sidebar';
 import StatsCard from '../components/common/StatsCard';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
+import Modal from '../components/common/Modal';
+import Badge from '../components/common/Badge';
 import {
   ShoppingCartIcon,
   CurrencyDollarIcon,
@@ -17,6 +19,8 @@ const CashierDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   // Mock data - replace with actual API calls
   const currentBatch = {
@@ -32,6 +36,88 @@ const CashierDashboard = () => {
     sales: 2450.50,
     transactions: 15,
     avgTransaction: 163.37,
+  };
+
+  // Mock recent transactions
+  const recentTransactions = [
+    {
+      id: 1,
+      invoice_number: 'INV-2025-001',
+      date: '2025-12-30',
+      time: '10:30 AM',
+      customer: 'Walk-in Customer',
+      payment_method: 'Cash',
+      total: 156.50,
+      items: [
+        { name: 'Hydrating Cleanser', quantity: 2, price: 24.99 },
+        { name: 'Vitamin C Serum', quantity: 1, price: 45.00 },
+        { name: 'Moisturizing Cream', quantity: 2, price: 32.50 },
+      ],
+      status: 'Completed',
+    },
+    {
+      id: 2,
+      invoice_number: 'INV-2025-002',
+      date: '2025-12-30',
+      time: '11:15 AM',
+      customer: 'Sarah Johnson',
+      payment_method: 'Card',
+      total: 89.99,
+      items: [
+        { name: 'Sunscreen SPF 50', quantity: 2, price: 28.00 },
+        { name: 'Face Mask Pack', quantity: 2, price: 15.99 },
+      ],
+      status: 'Completed',
+    },
+    {
+      id: 3,
+      invoice_number: 'INV-2025-003',
+      date: '2025-12-30',
+      time: '12:45 PM',
+      customer: 'Walk-in Customer',
+      payment_method: 'Cash',
+      total: 67.00,
+      items: [
+        { name: 'Toner Essence', quantity: 2, price: 22.00 },
+        { name: 'Hydrating Cleanser', quantity: 1, price: 24.99 },
+      ],
+      status: 'Completed',
+    },
+    {
+      id: 4,
+      invoice_number: 'INV-2025-004',
+      date: '2025-12-30',
+      time: '02:20 PM',
+      customer: 'Michael Chen',
+      payment_method: 'Mobile',
+      total: 122.50,
+      items: [
+        { name: 'Vitamin C Serum', quantity: 1, price: 45.00 },
+        { name: 'Moisturizing Cream', quantity: 1, price: 32.50 },
+        { name: 'Sunscreen SPF 50', quantity: 1, price: 28.00 },
+        { name: 'Toner Essence', quantity: 1, price: 22.00 },
+      ],
+      status: 'Completed',
+    },
+    {
+      id: 5,
+      invoice_number: 'INV-2025-005',
+      date: '2025-12-30',
+      time: '03:50 PM',
+      customer: 'Walk-in Customer',
+      payment_method: 'Cash',
+      total: 75.98,
+      items: [
+        { name: 'Face Mask Pack', quantity: 3, price: 15.99 },
+        { name: 'Sunscreen SPF 50', quantity: 1, price: 28.00 },
+      ],
+      status: 'Completed',
+    },
+  ];
+
+  const handleViewTransaction = (transaction) => {
+    setSelectedTransaction(transaction);
+    setIsViewModalOpen(true);
   };
 
   return (
@@ -147,24 +233,40 @@ const CashierDashboard = () => {
               </div>
 
               <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map((item) => (
+                {recentTransactions.map((transaction) => (
                   <div
-                    key={item}
+                    key={transaction.id}
                     className="flex items-center justify-between p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        INV-{Date.now() + item}
-                      </p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-1">
+                        <p className="text-sm font-medium text-white">
+                          {transaction.invoice_number}
+                        </p>
+                        <Badge variant="glass" className="text-xs">
+                          {transaction.payment_method}
+                        </Badge>
+                      </div>
                       <p className="text-xs text-white/60">
-                        {new Date().toLocaleTimeString()}
+                        {transaction.time} • {transaction.customer}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-white">
-                        ${(Math.random() * 200 + 50).toFixed(2)}
-                      </p>
-                      <span className="badge badge-success text-xs">Completed</span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-white">
+                          ${transaction.total.toFixed(2)}
+                        </p>
+                        <Badge variant="success" className="text-xs">
+                          {transaction.status}
+                        </Badge>
+                      </div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleViewTransaction(transaction)}
+                      >
+                        View Details
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -172,6 +274,89 @@ const CashierDashboard = () => {
           </Card>
         </div>
       </div>
+
+      {/* View Transaction Details Modal */}
+      <Modal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        title="Transaction Details"
+        size="lg"
+      >
+        {selectedTransaction && (
+          <div className="space-y-6">
+            {/* Transaction Info */}
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Transaction Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Invoice Number</p>
+                  <p className="text-sm text-white font-medium">{selectedTransaction.invoice_number}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Date & Time</p>
+                  <p className="text-sm text-white font-medium">{selectedTransaction.date} at {selectedTransaction.time}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Customer</p>
+                  <p className="text-sm text-white font-medium">{selectedTransaction.customer}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Payment Method</p>
+                  <Badge variant="glass">{selectedTransaction.payment_method}</Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Items Purchased */}
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Items Purchased</h3>
+              <div className="space-y-3">
+                {selectedTransaction.items.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <div>
+                      <p className="text-sm text-white font-medium">{item.name}</p>
+                      <p className="text-xs text-white/60">Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
+                    </div>
+                    <p className="text-sm font-bold text-white">
+                      ${(item.quantity * item.price).toFixed(2)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment Summary */}
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Payment Summary</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-white/80">
+                  <span>Subtotal:</span>
+                  <span>${selectedTransaction.total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-white/80">
+                  <span>Tax:</span>
+                  <span>$0.00</span>
+                </div>
+                <div className="h-px bg-white/10 my-2"></div>
+                <div className="flex justify-between text-lg font-bold text-white">
+                  <span>Total Paid:</span>
+                  <span>${selectedTransaction.total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm mt-3">
+                  <span className="text-white/60">Status:</span>
+                  <Badge variant="success">{selectedTransaction.status}</Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4">
+              <Button variant="secondary" onClick={() => setIsViewModalOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
