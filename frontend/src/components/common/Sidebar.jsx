@@ -12,8 +12,11 @@ import {
 
 const Sidebar = ({ isOpen, onClose, userRole }) => {
   const getMenuItems = () => {
+    // Dashboard path varies by role
+    const dashboardPath = userRole === 'HR' ? '/hr/dashboard' : '/dashboard';
+
     const baseItems = [
-      { to: '/dashboard', icon: HomeIcon, label: 'Dashboard' },
+      { to: dashboardPath, icon: HomeIcon, label: 'Dashboard' },
     ];
 
     const roleMenus = {
@@ -34,8 +37,7 @@ const Sidebar = ({ isOpen, onClose, userRole }) => {
         { to: '/inventory', icon: ChartBarIcon, label: 'Inventory' },
       ],
       HR: [
-        { to: '/staff', icon: UsersIcon, label: 'Staff Management' },
-        { to: '/users', icon: Cog6ToothIcon, label: 'User Accounts' },
+        // HR role doesn't need additional menu items since Dashboard has tabs
       ],
     };
 

@@ -34,6 +34,8 @@ const HRDashboard = () => {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [isViewUserModalOpen, setIsViewUserModalOpen] = useState(false);
+  const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   // Form states
@@ -222,10 +224,20 @@ const HRDashboard = () => {
     console.log('Toggle status for user:', user.id);
   };
 
+  const handleViewUser = (user) => {
+    setSelectedUser(user);
+    setIsViewUserModalOpen(true);
+  };
+
   const handleDeleteUser = (user) => {
-    if (window.confirm(`Are you sure you want to delete user ${user.username}?`)) {
-      console.log('Delete user:', user.id);
-    }
+    setSelectedUser(user);
+    setIsDeleteUserModalOpen(true);
+  };
+
+  const confirmDeleteUser = () => {
+    console.log('Delete user:', selectedUser.id);
+    setIsDeleteUserModalOpen(false);
+    setSelectedUser(null);
   };
 
   const staffColumns = [
@@ -315,8 +327,20 @@ const HRDashboard = () => {
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
+              handleViewUser(row);
+            }}
+            title="View Details"
+          >
+            View
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
               handleEditUser(row);
             }}
+            title="Edit User"
           >
             <PencilIcon className="w-3 h-3" />
           </Button>
@@ -327,17 +351,19 @@ const HRDashboard = () => {
               e.stopPropagation();
               handleResetPassword(row);
             }}
+            title="Reset Password"
           >
             <KeyIcon className="w-3 h-3" />
           </Button>
           {row.status === 'Active' ? (
             <Button
-              variant="danger"
+              variant="warning"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 handleToggleUserStatus(row);
               }}
+              title="Disable Account"
             >
               Disable
             </Button>
@@ -349,10 +375,22 @@ const HRDashboard = () => {
                 e.stopPropagation();
                 handleToggleUserStatus(row);
               }}
+              title="Enable Account"
             >
               Enable
             </Button>
           )}
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteUser(row);
+            }}
+            title="Delete User"
+          >
+            <TrashIcon className="w-3 h-3" />
+          </Button>
         </div>
       ),
     },
@@ -790,6 +828,166 @@ const HRDashboard = () => {
           </Button>
         </div>
       </form>
+    </Modal>
+
+    {/* View User Details Modal */}
+    <Modal
+      isOpen={isViewUserModalOpen}
+      onClose={() => setIsViewUserModalOpen(false)}
+      title="User Details"
+      size="lg"
+    >
+      {selectedUser && (
+        <div className="space-y-6">
+          {/* Basic Information */}
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Basic Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-white/60 mb-1">Username</p>
+                <p className="text-sm text-white font-medium">{selectedUser.username}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">Full Name</p>
+                <p className="text-sm text-white font-medium">{selectedUser.fullName}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">Email</p>
+                <p className="text-sm text-white font-medium">{selectedUser.email}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">Role</p>
+                <span className={`badge ${
+                  selectedUser.role === 'Admin' ? 'badge-danger' :
+                  selectedUser.role === 'HR' ? 'badge-warning' :
+                  selectedUser.role === 'Stock Manager' ? 'badge-primary' :
+                  'badge-success'
+                }`}>
+                  {selectedUser.role}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Account Status */}
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Account Status</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-white/60 mb-1">Status</p>
+                <Badge variant={selectedUser.status === 'Active' ? 'success' : 'danger'}>
+                  {selectedUser.status}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">Last Login</p>
+                <p className="text-sm text-white font-medium">{selectedUser.lastLogin}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">Account Created</p>
+                <p className="text-sm text-white font-medium">{new Date(selectedUser.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">User ID</p>
+                <p className="text-sm text-white font-medium">#{selectedUser.id}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Permissions */}
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Permissions & Access</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/80">Can manage products</span>
+                <Badge variant={selectedUser.role !== 'Cashier' ? 'success' : 'danger'}>
+                  {selectedUser.role !== 'Cashier' ? 'Yes' : 'No'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/80">Can view reports</span>
+                <Badge variant={selectedUser.role === 'Admin' || selectedUser.role === 'HR' ? 'success' : 'danger'}>
+                  {selectedUser.role === 'Admin' || selectedUser.role === 'HR' ? 'Yes' : 'No'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/80">Can manage users</span>
+                <Badge variant={selectedUser.role === 'Admin' || selectedUser.role === 'HR' ? 'success' : 'danger'}>
+                  {selectedUser.role === 'Admin' || selectedUser.role === 'HR' ? 'Yes' : 'No'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/80">Can process sales</span>
+                <Badge variant={selectedUser.role === 'Cashier' || selectedUser.role === 'Admin' ? 'success' : 'danger'}>
+                  {selectedUser.role === 'Cashier' || selectedUser.role === 'Admin' ? 'Yes' : 'No'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end pt-4">
+            <Button variant="secondary" onClick={() => setIsViewUserModalOpen(false)}>
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setIsViewUserModalOpen(false);
+                handleEditUser(selectedUser);
+              }}
+            >
+              Edit User
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+
+    {/* Delete User Confirmation Modal */}
+    <Modal
+      isOpen={isDeleteUserModalOpen}
+      onClose={() => setIsDeleteUserModalOpen(false)}
+      title="Delete User Account"
+    >
+      {selectedUser && (
+        <div className="space-y-4">
+          <div className="glass-card p-4 border border-danger-500/30">
+            <div className="flex items-start gap-3">
+              <ShieldCheckIcon className="w-6 h-6 text-danger-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-semibold text-danger-400 mb-2">Warning: This action cannot be undone</h3>
+                <p className="text-sm text-white/80">
+                  You are about to permanently delete the user account for <strong className="text-white">{selectedUser.username}</strong> ({selectedUser.fullName}).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm text-white/80">This will:</p>
+            <ul className="list-disc list-inside space-y-1 text-sm text-white/60 ml-2">
+              <li>Remove all user access to the system</li>
+              <li>Delete associated login credentials</li>
+              <li>Cannot be reversed once confirmed</li>
+            </ul>
+          </div>
+
+          <div className="flex gap-3 justify-end pt-4">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setIsDeleteUserModalOpen(false);
+                setSelectedUser(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={confirmDeleteUser}>
+              Delete User
+            </Button>
+          </div>
+        </div>
+      )}
     </Modal>
     </>
   );
