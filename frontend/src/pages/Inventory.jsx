@@ -6,6 +6,7 @@ import Card, { CardHeader } from '../components/common/Card';
 import Table from '../components/common/Table';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
+import Modal from '../components/common/Modal';
 import Tabs from '../components/common/Tabs';
 import { MagnifyingGlassIcon, ArrowPathIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 
@@ -13,6 +14,19 @@ const Inventory = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
+  const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [adjustmentForm, setAdjustmentForm] = useState({
+    quantity: '',
+    reason: 'Damaged',
+    notes: '',
+  });
+  const [reorderForm, setReorderForm] = useState({
+    quantity: '',
+    supplier: '',
+    expectedDelivery: '',
+  });
 
   // Mock inventory data
   const inventoryMovements = [
@@ -184,11 +198,30 @@ const Inventory = () => {
       label: 'Actions',
       render: (_, row) => (
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setSelectedProduct(row);
+              setIsAdjustModalOpen(true);
+            }}
+          >
             Adjust
           </Button>
           {row.status !== 'Adequate' && (
-            <Button variant="primary" size="sm">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setSelectedProduct(row);
+                setReorderForm({
+                  quantity: row.reorderPoint,
+                  supplier: '',
+                  expectedDelivery: '',
+                });
+                setIsReorderModalOpen(true);
+              }}
+            >
               Reorder
             </Button>
           )}
@@ -196,6 +229,34 @@ const Inventory = () => {
       ),
     },
   ];
+
+  const handleAdjustInventory = (e) => {
+    e.preventDefault();
+    console.log('Adjust inventory:', {
+      product: selectedProduct,
+      ...adjustmentForm,
+    });
+    setIsAdjustModalOpen(false);
+    setAdjustmentForm({
+      quantity: '',
+      reason: 'Damaged',
+      notes: '',
+    });
+  };
+
+  const handleReorderProduct = (e) => {
+    e.preventDefault();
+    console.log('Reorder product:', {
+      product: selectedProduct,
+      ...reorderForm,
+    });
+    setIsReorderModalOpen(false);
+    setReorderForm({
+      quantity: '',
+      supplier: '',
+      expectedDelivery: '',
+    });
+  };
 
   const tabContent = [
     {
@@ -297,6 +358,159 @@ const Inventory = () => {
           <Tabs tabs={tabContent} />
           </div>
       </div>
+
+      {/* Adjust Inventory Modal */}
+      <Modal
+        isOpen={isAdjustModalOpen}
+        onClose={() => setIsAdjustModalOpen(false)}
+        title="Adjust Inventory"
+        size="md"
+      >
+        {selectedProduct && (
+          <form onSubmit={handleAdjustInventory} className="space-y-4">
+            <div className="glass-card p-4">
+              <p className="text-xs text-white/60 mb-1">Product</p>
+              <p className="text-sm text-white font-medium">{selectedProduct.product}</p>
+              <p className="text-xs text-white/60 mt-2">Current Stock: <span className="text-white font-semibold">{selectedProduct.currentStock}</span></p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/80 mb-2">Adjustment Quantity</label>
+              <Input
+                type="number"
+                value={adjustmentForm.quantity}
+                onChange={(e) => setAdjustmentForm({ ...adjustmentForm, quantity: e.target.value })}
+                placeholder="Enter quantity (use negative for decrease)"
+                required
+              />
+              <p className="text-xs text-white/60 mt-1">Use negative numbers to decrease stock (e.g., -5)</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/80 mb-2">Reason</label>
+              <select
+                className="select w-full"
+                value={adjustmentForm.reason}
+                onChange={(e) => setAdjustmentForm({ ...adjustmentForm, reason: e.target.value })}
+              >
+                <option value="Damaged">Damaged</option>
+                <option value="Expired">Expired</option>
+                <option value="Lost">Lost/Missing</option>
+                <option value="Found">Found (Inventory Count)</option>
+                <option value="Return">Customer Return</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/80 mb-2">Notes</label>
+              <textarea
+                className="textarea w-full"
+                rows="3"
+                value={adjustmentForm.notes}
+                onChange={(e) => setAdjustmentForm({ ...adjustmentForm, notes: e.target.value })}
+                placeholder="Additional notes about this adjustment..."
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4">
+              <Button type="button" variant="secondary" onClick={() => setIsAdjustModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="warning">
+                Submit Adjustment
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* Reorder Product Modal */}
+      <Modal
+        isOpen={isReorderModalOpen}
+        onClose={() => setIsReorderModalOpen(false)}
+        title="Create Reorder / Purchase Order"
+        size="md"
+      >
+        {selectedProduct && (
+          <form onSubmit={handleReorderProduct} className="space-y-4">
+            <div className="glass-card p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Product</p>
+                  <p className="text-sm text-white font-medium">{selectedProduct.product}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Current Stock</p>
+                  <p className="text-sm font-bold text-danger-400">{selectedProduct.currentStock}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Reorder Point</p>
+                  <p className="text-sm text-white/80">{selectedProduct.reorderPoint}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Status</p>
+                  <span className={`badge ${
+                    selectedProduct.status === 'Out of Stock' ? 'badge-danger' : 'badge-warning'
+                  }`}>
+                    {selectedProduct.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/80 mb-2">Order Quantity</label>
+              <Input
+                type="number"
+                value={reorderForm.quantity}
+                onChange={(e) => setReorderForm({ ...reorderForm, quantity: e.target.value })}
+                placeholder="Enter quantity to order"
+                min="1"
+                required
+              />
+              <p className="text-xs text-white/60 mt-1">Suggested: {selectedProduct.reorderPoint} units</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/80 mb-2">Supplier</label>
+              <select
+                className="select w-full"
+                value={reorderForm.supplier}
+                onChange={(e) => setReorderForm({ ...reorderForm, supplier: e.target.value })}
+                required
+              >
+                <option value="">Select Supplier</option>
+                <option value="GlowSkin Supplies">GlowSkin Supplies</option>
+                <option value="PureGlow Wholesale">PureGlow Wholesale</option>
+                <option value="SunShield Distributors">SunShield Distributors</option>
+                <option value="HydraPlus Corp">HydraPlus Corp</option>
+                <option value="YouthGlow International">YouthGlow International</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white/80 mb-2">Expected Delivery</label>
+              <Input
+                type="date"
+                value={reorderForm.expectedDelivery}
+                onChange={(e) => setReorderForm({ ...reorderForm, expectedDelivery: e.target.value })}
+                min={new Date().toISOString().split('T')[0]}
+                required
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4">
+              <Button type="button" variant="secondary" onClick={() => setIsReorderModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                Create Purchase Order
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 };
