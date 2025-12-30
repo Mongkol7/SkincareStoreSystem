@@ -4,7 +4,7 @@ import Card, { CardHeader } from '../common/Card';
 import Input from '../common/Input';
 import Select from '../common/Select';
 import Button from '../common/Button';
-import { CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { CurrencyDollarIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 const OpenBatch = () => {
   const navigate = useNavigate();
@@ -71,8 +71,21 @@ const OpenBatch = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate('/cashier/dashboard')}
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+        >
+          <ArrowLeftIcon className="w-6 h-6 text-white" />
+        </button>
+        <div>
+          <h2 className="text-2xl font-bold text-white">Open New Batch</h2>
+          <p className="text-white/60 text-sm">Start your shift and begin processing sales</p>
+        </div>
+      </div>
+
       <Card>
-        <CardHeader title="Open New Batch" />
 
         <form onSubmit={handleSubmit}>
           <div className="mb-6 p-4 bg-primary-500/20 border border-primary-500/30 rounded-xl">

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card, { CardHeader } from '../common/Card';
 import Button from '../common/Button';
 import Input from '../common/Input';
@@ -11,9 +12,11 @@ import {
   TrashIcon,
   PlusIcon,
   MinusIcon,
+  ArrowLeftIcon,
 } from '@heroicons/react/24/outline';
 
 const SalesPage = () => {
+  const navigate = useNavigate();
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -108,11 +111,26 @@ const SalesPage = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Products Section */}
-      <div className="lg:col-span-2 space-y-4">
-        <Card>
-          <CardHeader title="Products" />
+    <div className="space-y-6">
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+        >
+          <ArrowLeftIcon className="w-6 h-6 text-white" />
+        </button>
+        <div>
+          <h2 className="text-2xl font-bold text-white">New Sale</h2>
+          <p className="text-white/60 text-sm">Add products to cart and complete the sale</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Products Section */}
+        <div className="lg:col-span-2 space-y-4">
+          <Card>
+            <CardHeader title="Products" />
 
           {/* Search and Filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -163,17 +181,17 @@ const SalesPage = () => {
         </Card>
       </div>
 
-      {/* Cart Section */}
-      <div className="lg:col-span-1">
-        <Card className="sticky top-6">
-          <CardHeader
-            title={
-              <div className="flex items-center gap-2">
-                <ShoppingCartIcon className="w-5 h-5" />
-                Cart ({cart.length})
-              </div>
-            }
-          />
+        {/* Cart Section */}
+        <div className="lg:col-span-1">
+          <Card className="sticky top-6">
+            <CardHeader
+              title={
+                <div className="flex items-center gap-2">
+                  <ShoppingCartIcon className="w-5 h-5" />
+                  Cart ({cart.length})
+                </div>
+              }
+            />
 
           {cart.length === 0 ? (
             <div className="text-center py-8">
@@ -253,7 +271,8 @@ const SalesPage = () => {
               </Button>
             </>
           )}
-        </Card>
+          </Card>
+        </div>
       </div>
 
       {/* Checkout Modal */}

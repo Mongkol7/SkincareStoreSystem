@@ -4,7 +4,7 @@ import Card, { CardHeader } from '../common/Card';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
-import { CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, ExclamationTriangleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 const CloseBatch = () => {
   const navigate = useNavigate();
@@ -48,8 +48,21 @@ const CloseBatch = () => {
 
   return (
     <div className="max-w-3xl mx-auto">
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate('/cashier/dashboard')}
+          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+        >
+          <ArrowLeftIcon className="w-6 h-6 text-white" />
+        </button>
+        <div>
+          <h2 className="text-2xl font-bold text-white">Close Batch</h2>
+          <p className="text-white/60 text-sm">End your shift and reconcile cash drawer</p>
+        </div>
+      </div>
+
       <Card>
-        <CardHeader title="Close Batch" />
 
         <form onSubmit={handleSubmit}>
           {/* Batch Info */}
