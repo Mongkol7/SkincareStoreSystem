@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -7,6 +8,11 @@ import { LockClosedIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 
 const Login = () => {
   const { login } = useAuth();
+  const { storeSettings } = useStoreSettings();
+
+  // Debug logging
+  console.log('Login page - Current store name:', storeSettings.name);
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -48,6 +54,46 @@ const Login = () => {
     return newErrors;
   };
 
+  // Define valid users with EXACT case-sensitive credentials
+  const validUsers = {
+    'admin@skincare.com': {
+      password: 'password123',
+      user: {
+        id: 1,
+        name: 'Admin User',
+        email: 'admin@skincare.com',
+        roles: [{ id: 1, name: 'Admin', url: '/admin' }],
+      }
+    },
+    'cashier@skincare.com': {
+      password: 'password123',
+      user: {
+        id: 2,
+        name: 'Cashier User',
+        email: 'cashier@skincare.com',
+        roles: [{ id: 2, name: 'Cashier', url: '/cashier' }],
+      }
+    },
+    'stock@skincare.com': {
+      password: 'password123',
+      user: {
+        id: 3,
+        name: 'Stock Manager',
+        email: 'stock@skincare.com',
+        roles: [{ id: 3, name: 'Stock Manager', url: '/stock-manager' }],
+      }
+    },
+    'hr@skincare.com': {
+      password: 'password123',
+      user: {
+        id: 4,
+        name: 'HR User',
+        email: 'hr@skincare.com',
+        roles: [{ id: 4, name: 'HR', url: '/hr' }],
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError('');
@@ -64,52 +110,27 @@ const Login = () => {
       // TODO: Replace with actual API call
       // const response = await authService.login(formData);
 
-      // Mock login for demonstration - different users based on email
+      // Strict case-sensitive login validation
       setTimeout(() => {
-        let mockUser;
+        // Check if email exists (case-sensitive)
+        const userCredentials = validUsers[formData.email];
 
-        // Determine role based on email
-        if (formData.email.includes('admin')) {
-          mockUser = {
-            id: 1,
-            name: 'Admin User',
-            email: formData.email,
-            roles: [{ id: 1, name: 'Admin', url: '/admin' }],
-          };
-        } else if (formData.email.includes('cashier')) {
-          mockUser = {
-            id: 2,
-            name: 'Cashier User',
-            email: formData.email,
-            roles: [{ id: 2, name: 'Cashier', url: '/cashier' }],
-          };
-        } else if (formData.email.includes('stock')) {
-          mockUser = {
-            id: 3,
-            name: 'Stock Manager',
-            email: formData.email,
-            roles: [{ id: 3, name: 'Stock Manager', url: '/stock-manager' }],
-          };
-        } else if (formData.email.includes('hr')) {
-          mockUser = {
-            id: 4,
-            name: 'HR User',
-            email: formData.email,
-            roles: [{ id: 4, name: 'HR', url: '/hr' }],
-          };
-        } else {
-          // Default to Admin if email doesn't match
-          mockUser = {
-            id: 1,
-            name: 'Demo User',
-            email: formData.email,
-            roles: [{ id: 1, name: 'Admin', url: '/admin' }],
-          };
+        if (!userCredentials) {
+          setApiError('Invalid email or password. Please check your credentials.');
+          setLoading(false);
+          return;
         }
 
-        const mockToken = 'mock-jwt-token-' + Date.now();
+        // Check if password matches exactly (case-sensitive)
+        if (userCredentials.password !== formData.password) {
+          setApiError('Invalid email or password. Please check your credentials.');
+          setLoading(false);
+          return;
+        }
 
-        login(mockUser, mockToken);
+        // Login successful
+        const mockToken = 'mock-jwt-token-' + Date.now();
+        login(userCredentials.user, mockToken);
         setLoading(false);
       }, 1000);
     } catch (error) {
@@ -126,7 +147,7 @@ const Login = () => {
           <div className="w-16 h-16 mx-auto mb-4 bg-white/20 rounded-2xl flex items-center justify-center">
             <LockClosedIcon className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Skincare POS</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">{storeSettings.name}</h1>
           <p className="text-white/60 text-sm">Sign in to continue</p>
         </div>
 

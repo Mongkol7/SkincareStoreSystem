@@ -6,15 +6,34 @@ import Card, { CardHeader } from '../components/common/Card';
 import Table from '../components/common/Table';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
+import Modal from '../components/common/Modal';
 import { MagnifyingGlassIcon, PlusIcon, KeyIcon } from '@heroicons/react/24/outline';
 
 const Users = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
-  // Mock user accounts data
-  const users = [
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    fullName: '',
+    role: '',
+    password: '',
+    confirmPassword: ''
+  });
+
+  const [passwordForm, setPasswordForm] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  // Mock user accounts data with state
+  const [usersList, setUsersList] = useState([
     {
       id: 1,
       username: 'admin',
@@ -75,7 +94,108 @@ const Users = () => {
       status: 'Inactive',
       createdAt: '2024-03-01'
     },
-  ];
+  ]);
+
+  // Handler functions
+  const handleAddUser = (e) => {
+    e.preventDefault();
+    const newUser = {
+      id: usersList.length + 1,
+      ...formData,
+      lastLogin: 'Never',
+      status: 'Active',
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    setUsersList([...usersList, newUser]);
+    setIsAddModalOpen(false);
+    resetForm();
+  };
+
+  const handleEditUser = (e) => {
+    e.preventDefault();
+
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match!');
+      return;
+    }
+
+    setUsersList(usersList.map(u => {
+      if (u.id === selectedUser.id) {
+        const updatedUser = {
+          ...u,
+          username: formData.username,
+          email: formData.email,
+          fullName: formData.fullName,
+          role: formData.role
+        };
+        // Only update password if a new one is provided
+        if (formData.password && formData.password.trim() !== '') {
+          console.log('Password updated for user:', formData.username);
+          // In real app, this would hash and update password
+        }
+        return updatedUser;
+      }
+      return u;
+    }));
+    setIsEditModalOpen(false);
+    resetForm();
+  };
+
+  const handleResetPassword = (e) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      alert('Passwords do not match!');
+      return;
+    }
+    console.log('Password reset for user:', selectedUser.username);
+    setIsPasswordModalOpen(false);
+    setPasswordForm({ newPassword: '', confirmPassword: '' });
+  };
+
+  const handleToggleStatus = (userId) => {
+    setUsersList(usersList.map(u =>
+      u.id === userId
+        ? { ...u, status: u.status === 'Active' ? 'Inactive' : 'Active' }
+        : u
+    ));
+  };
+
+  const openEditModal = (user) => {
+    setSelectedUser(user);
+    setFormData({
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      password: '',
+      confirmPassword: ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const openPasswordModal = (user) => {
+    setSelectedUser(user);
+    setIsPasswordModalOpen(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      username: '',
+      email: '',
+      fullName: '',
+      role: '',
+      password: '',
+      confirmPassword: ''
+    });
+    setSelectedUser(null);
+  };
+
+  // Filter users based on search
+  const filteredUsers = usersList.filter(u =>
+    u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const columns = [
     { field: 'username', label: 'Username' },
@@ -117,18 +237,18 @@ const Users = () => {
       label: 'Actions',
       render: (_, row) => (
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm">
+          <Button variant="secondary" size="sm" onClick={() => openEditModal(row)}>
             Edit
           </Button>
-          <Button variant="primary" size="sm">
+          <Button variant="primary" size="sm" onClick={() => openPasswordModal(row)}>
             <KeyIcon className="w-3 h-3" />
           </Button>
           {row.status === 'Active' ? (
-            <Button variant="danger" size="sm">
+            <Button variant="danger" size="sm" onClick={() => handleToggleStatus(row.id)}>
               Disable
             </Button>
           ) : (
-            <Button variant="success" size="sm">
+            <Button variant="success" size="sm" onClick={() => handleToggleStatus(row.id)}>
               Enable
             </Button>
           )}
@@ -138,9 +258,9 @@ const Users = () => {
   ];
 
   // Calculate summary stats
-  const activeUsers = users.filter(u => u.status === 'Active').length;
-  const inactiveUsers = users.filter(u => u.status === 'Inactive').length;
-  const adminUsers = users.filter(u => u.role === 'Admin').length;
+  const activeUsers = usersList.filter(u => u.status === 'Active').length;
+  const inactiveUsers = usersList.filter(u => u.status === 'Inactive').length;
+  const adminUsers = usersList.filter(u => u.role === 'Admin').length;
 
   return (
     <div className="min-h-screen">
@@ -167,7 +287,7 @@ const Users = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="glass-card p-4">
                 <p className="text-xs text-white/60 mb-1">Total Users</p>
-                <p className="text-2xl font-bold text-white">{users.length}</p>
+                <p className="text-2xl font-bold text-white">{usersList.length}</p>
               </div>
               <div className="glass-card p-4">
                 <p className="text-xs text-white/60 mb-1">Active</p>
@@ -199,14 +319,14 @@ const Users = () => {
                         className="pl-10 w-64"
                       />
                     </div>
-                    <Button variant="primary" size="sm">
+                    <Button variant="primary" size="sm" onClick={() => setIsAddModalOpen(true)}>
                       <PlusIcon className="w-4 h-4 mr-2" />
                       Add User
                     </Button>
                   </div>
                 }
               />
-              <Table columns={columns} data={users} />
+              <Table columns={columns} data={filteredUsers} />
             </Card>
 
           {/* Security Notice */}
@@ -223,6 +343,218 @@ const Users = () => {
             </div>
           </div>
       </div>
+
+      {/* Add User Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => { setIsAddModalOpen(false); resetForm(); }}
+        title="Add New User"
+        size="md"
+      >
+        <form onSubmit={handleAddUser}>
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Username *</label>
+              <Input
+                required
+                value={formData.username}
+                onChange={(e) => setFormData({...formData, username: e.target.value})}
+                placeholder="john.doe"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Full Name *</label>
+              <Input
+                required
+                value={formData.fullName}
+                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                placeholder="John Doe"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Email *</label>
+              <Input
+                required
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                placeholder="john.doe@skincare.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Role *</label>
+              <select
+                required
+                className="select w-full"
+                value={formData.role}
+                onChange={(e) => setFormData({...formData, role: e.target.value})}
+              >
+                <option value="">Select role</option>
+                <option value="Admin">Admin</option>
+                <option value="HR">HR</option>
+                <option value="Stock Manager">Stock Manager</option>
+                <option value="Cashier">Cashier</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Password *</label>
+              <Input
+                required
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                placeholder="Enter password"
+                minLength={6}
+              />
+              <p className="text-xs text-white/40 mt-1">Minimum 6 characters</p>
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button type="button" variant="secondary" onClick={() => { setIsAddModalOpen(false); resetForm(); }}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary">
+              Add User
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit User Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); resetForm(); }}
+        title="Edit User"
+        size="md"
+      >
+        <form onSubmit={handleEditUser}>
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Username *</label>
+              <Input
+                required
+                value={formData.username}
+                onChange={(e) => setFormData({...formData, username: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Full Name *</label>
+              <Input
+                required
+                value={formData.fullName}
+                onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Email *</label>
+              <Input
+                required
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Role *</label>
+              <select
+                required
+                className="select w-full"
+                value={formData.role}
+                onChange={(e) => setFormData({...formData, role: e.target.value})}
+              >
+                <option value="Admin">Admin</option>
+                <option value="HR">HR</option>
+                <option value="Stock Manager">Stock Manager</option>
+                <option value="Cashier">Cashier</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">New Password (Optional)</label>
+              <Input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                placeholder="Leave empty to keep current password"
+                minLength={6}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Confirm New Password</label>
+              <Input
+                type="password"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                placeholder="Confirm new password"
+                minLength={6}
+              />
+              <p className="text-xs text-white/40 mt-1">Only fill these if you want to change the password</p>
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button type="button" variant="secondary" onClick={() => { setIsEditModalOpen(false); resetForm(); }}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary">
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Reset Password Modal */}
+      <Modal
+        isOpen={isPasswordModalOpen}
+        onClose={() => { setIsPasswordModalOpen(false); setPasswordForm({ newPassword: '', confirmPassword: '' }); }}
+        title="Reset Password"
+        size="sm"
+      >
+        {selectedUser && (
+          <form onSubmit={handleResetPassword}>
+            <div className="mb-6">
+              <div className="glass-card p-4 mb-4">
+                <p className="text-sm text-white/60">Resetting password for:</p>
+                <p className="text-white font-semibold">{selectedUser.fullName}</p>
+                <p className="text-xs text-white/40">{selectedUser.username}</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-white/70 mb-2">New Password *</label>
+                  <Input
+                    required
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                    placeholder="Enter new password"
+                    minLength={6}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-white/70 mb-2">Confirm Password *</label>
+                  <Input
+                    required
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                    placeholder="Confirm new password"
+                    minLength={6}
+                  />
+                </div>
+                <p className="text-xs text-white/40">Minimum 6 characters</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <Button type="button" variant="secondary" onClick={() => { setIsPasswordModalOpen(false); setPasswordForm({ newPassword: '', confirmPassword: '' }); }}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                Reset Password
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 };

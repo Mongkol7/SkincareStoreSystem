@@ -17,6 +17,7 @@ const Batches = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState(null);
+  const [dateFilter, setDateFilter] = useState('all'); // 'all', 'week', 'month'
 
   // Mock batch data
   const batches = [
@@ -141,10 +142,41 @@ const Batches = () => {
     },
   ];
 
-  // Calculate summary stats
-  const totalSales = batches.reduce((sum, b) => sum + b.totalSales, 0);
-  const totalTransactions = batches.reduce((sum, b) => sum + b.transactions, 0);
-  const avgSalesPerBatch = totalSales / batches.length;
+  // Filter batches based on date
+  const filterBatchesByDate = () => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    if (dateFilter === 'all') {
+      return batches;
+    }
+
+    if (dateFilter === 'week') {
+      // Get the start of the week (Sunday)
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
+      const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
+
+      return batches.filter(batch => batch.date >= startOfWeekStr);
+    }
+
+    if (dateFilter === 'month') {
+      // Get the start of the month
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
+
+      return batches.filter(batch => batch.date >= startOfMonthStr);
+    }
+
+    return batches;
+  };
+
+  const filteredBatches = filterBatchesByDate();
+
+  // Calculate summary stats from filtered batches
+  const totalSales = filteredBatches.reduce((sum, b) => sum + b.totalSales, 0);
+  const totalTransactions = filteredBatches.reduce((sum, b) => sum + b.transactions, 0);
+  const avgSalesPerBatch = filteredBatches.length > 0 ? totalSales / filteredBatches.length : 0;
 
   return (
     <div className="min-h-screen">
@@ -174,7 +206,7 @@ const Batches = () => {
                 <ClockIcon className="w-5 h-5 text-primary-400" />
                 <p className="text-xs text-white/60">Total Batches</p>
               </div>
-              <p className="text-2xl font-bold text-white">{batches.length}</p>
+              <p className="text-2xl font-bold text-white">{filteredBatches.length}</p>
             </div>
 
             <div className="glass-card p-4">
@@ -208,16 +240,31 @@ const Batches = () => {
               title="Batch History"
               action={
                 <div className="flex gap-2">
-                  <Button variant="secondary" size="sm">
+                  <Button
+                    variant={dateFilter === 'all' ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => setDateFilter('all')}
+                  >
+                    All Time
+                  </Button>
+                  <Button
+                    variant={dateFilter === 'week' ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => setDateFilter('week')}
+                  >
                     This Week
                   </Button>
-                  <Button variant="secondary" size="sm">
+                  <Button
+                    variant={dateFilter === 'month' ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => setDateFilter('month')}
+                  >
                     This Month
                   </Button>
                 </div>
               }
             />
-            <Table columns={columns} data={batches} />
+            <Table columns={columns} data={filteredBatches} />
           </Card>
         </div>
       </div>

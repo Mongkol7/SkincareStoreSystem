@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
@@ -8,7 +8,8 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Select from '../components/common/Select';
 import Modal from '../components/common/Modal';
-import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon, PrinterIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon, PrinterIcon, ArrowDownTrayIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { exportToCSV, exportToExcel, exportToPDF, formatTransactionsForExport } from '../utils/exportUtils';
 
 const Transactions = () => {
   const { user } = useAuth();
@@ -21,6 +22,9 @@ const Transactions = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
+  const exportButtonRef = useRef(null);
 
   // Mock transaction data with detailed items
   const [transactions] = useState([
@@ -127,6 +131,31 @@ const Transactions = () => {
     },
   ]);
 
+  // Close export menu when clicking outside
+  useEffect(() => {
+    if (!showExportMenu) return;
+
+    const handleClickOutside = (event) => {
+      if (
+        exportMenuRef.current &&
+        !exportMenuRef.current.contains(event.target) &&
+        exportButtonRef.current &&
+        !exportButtonRef.current.contains(event.target)
+      ) {
+        setShowExportMenu(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportMenu]);
+
   // Filter and search transactions
   const filteredTransactions = useMemo(() => {
     return transactions.filter(transaction => {
@@ -163,6 +192,27 @@ const Transactions = () => {
     setDateFrom('');
     setDateTo('');
     setSearchTerm('');
+  };
+
+  // Export handlers
+  const handleExportCSV = () => {
+    const formattedData = formatTransactionsForExport(filteredTransactions);
+    const filename = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+    exportToCSV(formattedData, filename);
+    setShowExportMenu(false);
+  };
+
+  const handleExportExcel = () => {
+    const formattedData = formatTransactionsForExport(filteredTransactions);
+    const filename = `transactions_${new Date().toISOString().split('T')[0]}.xls`;
+    exportToExcel(formattedData, filename);
+    setShowExportMenu(false);
+  };
+
+  const handleExportPDF = () => {
+    const formattedData = formatTransactionsForExport(filteredTransactions);
+    exportToPDF(formattedData, 'transactions.pdf', 'Transactions Report');
+    setShowExportMenu(false);
   };
 
   const columns = [
@@ -256,10 +306,49 @@ const Transactions = () => {
                       <FunnelIcon className="w-4 h-4 mr-2" />
                       Filters
                     </Button>
-                    <Button variant="secondary" size="sm">
-                      <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
-                      Export
-                    </Button>
+
+                    {/* Export Dropdown */}
+                    <div className="relative">
+                      <Button
+                        ref={exportButtonRef}
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setShowExportMenu(!showExportMenu)}
+                      >
+                        <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+                        Export
+                        <ChevronDownIcon className="w-4 h-4 ml-2" />
+                      </Button>
+
+                      {showExportMenu && (
+                        <div
+                          ref={exportMenuRef}
+                          className="absolute right-0 mt-2 w-48 glass-card p-2 z-50 animate-scale-in"
+                        >
+                          <button
+                            onClick={handleExportCSV}
+                            className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2"
+                          >
+                            <ArrowDownTrayIcon className="w-4 h-4" />
+                            Export as CSV
+                          </button>
+                          <button
+                            onClick={handleExportExcel}
+                            className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2"
+                          >
+                            <ArrowDownTrayIcon className="w-4 h-4" />
+                            Export as Excel
+                          </button>
+                          <button
+                            onClick={handleExportPDF}
+                            className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2"
+                          >
+                            <PrinterIcon className="w-4 h-4" />
+                            Export as PDF
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 }
               />

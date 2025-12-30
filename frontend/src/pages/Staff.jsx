@@ -165,11 +165,16 @@ const Staff = () => {
 
   // Toggle Staff Status
   const toggleStaffStatus = (staff) => {
+    const newStatus = staff.status === 'Active' ? 'On Leave' : 'Active';
     setStaffList(staffList.map(s =>
       s.id === staff.id
-        ? { ...s, status: s.status === 'Active' ? 'On Leave' : 'Active' }
+        ? { ...s, status: newStatus }
         : s
     ));
+    // Update selectedStaff if it's the same person
+    if (selectedStaff && selectedStaff.id === staff.id) {
+      setSelectedStaff({ ...selectedStaff, status: newStatus });
+    }
   };
 
   // Open Edit Modal
@@ -192,6 +197,17 @@ const Staff = () => {
   // Open View Modal
   const openViewModal = (staff) => {
     setSelectedStaff(staff);
+    setFormData({
+      name: staff.name,
+      email: staff.email,
+      role: staff.role,
+      department: staff.department,
+      phone: staff.phone,
+      joinDate: staff.joinDate,
+      address: staff.address,
+      emergencyContact: staff.emergencyContact,
+      salary: staff.salary.toString()
+    });
     setIsViewModalOpen(true);
   };
 
@@ -241,7 +257,7 @@ const Staff = () => {
           value === 'Active' ? 'badge-success' :
           value === 'On Leave' ? 'badge-warning' :
           'badge-danger'
-        }`}>
+        } pointer-events-none`}>
           {value}
         </span>
       ),
@@ -251,11 +267,8 @@ const Staff = () => {
       label: 'Actions',
       render: (_, row) => (
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => openEditModal(row)}>
-            Edit
-          </Button>
           <Button variant="primary" size="sm" onClick={() => openViewModal(row)}>
-            View
+            View / Edit
           </Button>
         </div>
       ),
@@ -604,91 +617,136 @@ const Staff = () => {
         </form>
       </Modal>
 
-      {/* View Staff Modal */}
+      {/* View/Edit Staff Modal */}
       <Modal
         isOpen={isViewModalOpen}
-        onClose={() => setIsViewModalOpen(false)}
-        title="Staff Member Details"
-        size="md"
+        onClose={() => {
+          setIsViewModalOpen(false);
+          resetForm();
+        }}
+        title="Edit Staff Member"
+        size="lg"
       >
         {selectedStaff && (
-          <div className="space-y-6">
-          <div className="glass-card p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Personal Information</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-white/60 text-sm">Name</span>
-                  <span className="text-white font-medium">{selectedStaff.name}</span>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            setStaffList(staffList.map(s =>
+              s.id === selectedStaff.id
+                ? { ...s, ...formData, salary: parseFloat(formData.salary) }
+                : s
+            ));
+            setIsViewModalOpen(false);
+            resetForm();
+          }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Full Name *</label>
+                <Input
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                />
               </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60 text-sm">Email</span>
-                  <span className="text-white">{selectedStaff.email}</span>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Email *</label>
+                <Input
+                  required
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
               </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60 text-sm">Phone</span>
-                  <span className="text-white">{selectedStaff.phone}</span>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Role *</label>
+                <select
+                  required
+                  className="select w-full"
+                  value={formData.role}
+                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                >
+                  <option value="Cashier">Cashier</option>
+                  <option value="Stock Manager">Stock Manager</option>
+                  <option value="HR">HR</option>
+                  <option value="Admin">Admin</option>
+                </select>
               </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60 text-sm">Address</span>
-                  <span className="text-white text-right">{selectedStaff.address}</span>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Department *</label>
+                <Input
+                  required
+                  value={formData.department}
+                  onChange={(e) => setFormData({...formData, department: e.target.value})}
+                />
               </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60 text-sm">Emergency Contact</span>
-                  <span className="text-white">{selectedStaff.emergencyContact}</span>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Phone *</label>
+                <Input
+                  required
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                />
               </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Join Date *</label>
+                <Input
+                  required
+                  type="date"
+                  value={formData.joinDate}
+                  onChange={(e) => setFormData({...formData, joinDate: e.target.value})}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm text-white/70 mb-2">Address</label>
+                <Input
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Emergency Contact</label>
+                <Input
+                  type="tel"
+                  value={formData.emergencyContact}
+                  onChange={(e) => setFormData({...formData, emergencyContact: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-white/70 mb-2">Salary ($)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.salary}
+                  onChange={(e) => setFormData({...formData, salary: e.target.value})}
+                />
               </div>
             </div>
 
-          <div className="glass-card p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Employment Details</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-white/60 text-sm">Role</span>
-                  <span className="badge badge-primary">{selectedStaff.role}</span>
-              </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60 text-sm">Department</span>
-                  <span className="text-white">{selectedStaff.department}</span>
-              </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60 text-sm">Join Date</span>
-                  <span className="text-white">{selectedStaff.joinDate}</span>
-              </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60 text-sm">Salary</span>
-                  <span className="text-white font-semibold">${selectedStaff.salary?.toLocaleString()}</span>
-              </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60 text-sm">Status</span>
-                  <span className={`badge ${
-                    selectedStaff.status === 'Active' ? 'badge-success' : 'badge-warning'
-                  }`}>
-                    {selectedStaff.status}
-                  </span>
-              </div>
-              </div>
-            </div>
-
-          <div className="flex gap-3">
-            <Button
+            <div className="flex gap-3 justify-end">
+              {user?.roles?.[0]?.name !== 'HR' && (
+              <Button
+                type="button"
                 variant="secondary"
-                className="flex-1"
                 onClick={() => toggleStaffStatus(selectedStaff)}
               >
                 {selectedStaff.status === 'Active' ? 'Mark On Leave' : 'Mark Active'}
               </Button>
-            <Button
-                variant="primary"
-                className="flex-1"
+              )}
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => {
                   setIsViewModalOpen(false);
-                  openEditModal(selectedStaff);
+                  resetForm();
                 }}
               >
-                Edit Details
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                Save Changes
               </Button>
             </div>
-          </div>
+          </form>
         )}
       </Modal>
     </div>

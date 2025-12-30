@@ -11,12 +11,19 @@ const CloseBatch = () => {
   const [closingCash, setClosingCash] = useState('');
   const [remarks, setRemarks] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
+
+  // Auto-detect shift based on current time
+  const getShiftType = () => {
+    const hour = new Date().getHours();
+    return hour < 16 ? 'Morning' : 'Afternoon'; // Before 4 PM = Morning, After = Afternoon
+  };
 
   // Mock batch data
   const batchData = {
     batch_code: 'BTH-20231228-001',
     opening_date: new Date().toISOString(),
-    shift_type: 'Morning',
+    shift_type: getShiftType(),
     opening_cash: 500.00,
     total_sales: 2450.50,
     cash_sales: 1850.30,
@@ -27,9 +34,17 @@ const CloseBatch = () => {
   const expectedCash = batchData.opening_cash + batchData.cash_sales;
   const actualCash = parseFloat(closingCash) || 0;
   const difference = actualCash - expectedCash;
+  const hasDifference = closingCash && Math.abs(difference) >= 0.01;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Show warning if there's a cash difference and user hasn't confirmed
+    if (hasDifference && !showWarning) {
+      setShowWarning(true);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -199,11 +214,49 @@ const CloseBatch = () => {
               className="flex-1"
               disabled={loading || !closingCash}
             >
-              {loading ? 'Closing Batch...' : 'Close Batch'}
+              {loading ? 'Closing Batch...' : showWarning ? 'Confirm & Close Batch' : 'Close Batch'}
             </Button>
           </div>
         </form>
       </Card>
+
+      {/* Warning Modal */}
+      {showWarning && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="glass-card max-w-md w-full p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <ExclamationTriangleIcon className="w-6 h-6 text-warning-500 flex-shrink-0" />
+              <div>
+                <h3 className="text-lg font-bold text-white mb-2">Cash Difference Detected</h3>
+                <p className="text-sm text-white/80 mb-2">
+                  There is a difference of <span className="font-bold text-warning-500">${Math.abs(difference).toFixed(2)}</span> ({difference > 0 ? 'Over' : 'Short'}) between expected and actual cash.
+                </p>
+                <p className="text-sm text-white/60">
+                  Are you sure you want to close this batch with a cash discrepancy?
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setShowWarning(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                className="flex-1"
+                onClick={handleSubmit}
+              >
+                Yes, Close Batch
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

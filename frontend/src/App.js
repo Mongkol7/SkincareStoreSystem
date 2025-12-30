@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { StoreSettingsProvider } from './context/StoreSettingsContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Pages
@@ -35,8 +36,9 @@ import CloseBatch from './components/cashier/CloseBatch';
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <Routes>
+      <StoreSettingsProvider>
+        <AuthProvider>
+          <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
 
@@ -203,8 +205,9 @@ function App() {
           {/* Default Redirect */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </AuthProvider>
+          </Routes>
+        </AuthProvider>
+      </StoreSettingsProvider>
     </Router>
   );
 }

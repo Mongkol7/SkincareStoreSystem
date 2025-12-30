@@ -204,6 +204,27 @@ const PurchaseOrders = () => {
   };
 
   const columns = [
+    {
+      field: 'actions',
+      label: 'Actions',
+      render: (_, row) => (
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" onClick={() => handleViewPO(row)}>
+            View
+          </Button>
+          {row.status === 'Pending' && (
+            <>
+              <Button variant="primary" size="sm" onClick={() => handleApprovePO(row)}>
+                <CheckIcon className="w-4 h-4" />
+              </Button>
+              <Button variant="danger" size="sm" onClick={() => handleCancelPO(row)}>
+                <XMarkIcon className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+    },
     { field: 'poNumber', label: 'PO Number' },
     { field: 'supplier', label: 'Supplier' },
     { field: 'date', label: 'Order Date' },
@@ -234,27 +255,6 @@ const PurchaseOrders = () => {
         }`}>
           {value}
         </span>
-      ),
-    },
-    {
-      field: 'actions',
-      label: 'Actions',
-      render: (_, row) => (
-        <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => handleViewPO(row)}>
-            View
-          </Button>
-          {row.status === 'Pending' && (
-            <>
-              <Button variant="primary" size="sm" onClick={() => handleApprovePO(row)}>
-                <CheckIcon className="w-4 h-4" />
-              </Button>
-              <Button variant="danger" size="sm" onClick={() => handleCancelPO(row)}>
-                <XMarkIcon className="w-4 h-4" />
-              </Button>
-            </>
-          )}
-        </div>
       ),
     },
   ];
@@ -382,7 +382,7 @@ const PurchaseOrders = () => {
           <div>
             <div className="flex justify-between items-center mb-3">
               <label className="block text-sm text-white/60">Order Items *</label>
-              <Button type="button" variant="ghost" size="sm" onClick={addPOItem}>
+              <Button type="button" variant="secondary" size="sm" onClick={addPOItem}>
                 <PlusIcon className="w-4 h-4 mr-1" />
                 Add Item
               </Button>
@@ -432,7 +432,8 @@ const PurchaseOrders = () => {
           <div>
             <label className="block text-sm text-white/60 mb-2">Notes</label>
             <textarea
-              className="input-field w-full min-h-[80px] resize-none"
+              className="textarea w-full"
+              rows="3"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Add any additional notes..."
@@ -445,7 +446,7 @@ const PurchaseOrders = () => {
             </Button>
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               onClick={() => { setIsCreateModalOpen(false); resetForm(); }}
               className="flex-1"
             >
@@ -562,7 +563,7 @@ const PurchaseOrders = () => {
                 </>
               )}
               <Button
-                variant="ghost"
+                variant="secondary"
                 className="flex-1"
                 onClick={() => setIsViewModalOpen(false)}
               >

@@ -1,30 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import Card, { CardHeader } from '../components/common/Card';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Tabs from '../components/common/Tabs';
+import StoreNameDisplay from '../components/debug/StoreNameDisplay';
+import api from '../services/api';
 import {
   Cog6ToothIcon,
   UserCircleIcon,
   BuildingStorefrontIcon,
   BellIcon,
+  CheckCircleIcon,
+  XCircleIcon,
 } from '@heroicons/react/24/outline';
 
 const Settings = () => {
   const { user } = useAuth();
+  const { storeSettings: globalStoreSettings, updateStoreSettings: updateGlobalStoreSettings } = useStoreSettings();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
-  // Form states
-  const [storeSettings, setStoreSettings] = useState({
-    name: 'Skincare POS',
-    email: 'contact@skincarepos.com',
-    phone: '+1 234-567-8900',
-    address: '123 Beauty Street, Wellness City',
-    taxRate: '8.5',
-    currency: 'USD',
+  // Form states - initialize from global context
+  const [storeSettings, setStoreSettings] = useState(globalStoreSettings);
+
+  const [storeInfo, setStoreInfo] = useState({
+    registrationNumber: 'REG-2024-001234',
+    taxId: 'TAX-9876543210',
+    businessType: 'Retail - Skincare',
+    established: 'January 2023',
+    operatingHours: {
+      weekday: '9:00 AM - 8:00 PM',
+      saturday: '10:00 AM - 6:00 PM',
+      sunday: 'Closed',
+    },
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -33,6 +46,128 @@ const Settings = () => {
     dailyReport: false,
     systemUpdates: true,
   });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  // Sync with global store settings
+  useEffect(() => {
+    setStoreSettings(globalStoreSettings);
+  }, [globalStoreSettings]);
+
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const response = await api.get('/settings');
+      if (response.data) {
+        if (response.data.store) {
+          setStoreSettings(response.data.store);
+          updateGlobalStoreSettings(response.data.store);
+        }
+        setStoreInfo(response.data.storeInfo || storeInfo);
+        setNotificationSettings(response.data.notifications || notificationSettings);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      // Use default values if API fails
+    }
+  };
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, 3000);
+  };
+
+  const handleSaveGeneralSettings = async () => {
+    setLoading(true);
+    console.log('Saving store settings:', storeSettings);
+    try {
+      // Update global context first (for immediate UI update)
+      updateGlobalStoreSettings(storeSettings);
+      console.log('Global context updated');
+
+      // Try to save to API
+      await api.put('/settings/general', storeSettings);
+      showNotification('General settings saved successfully', 'success');
+    } catch (error) {
+      console.error('Error saving general settings:', error);
+      // Still update locally even if API fails
+      updateGlobalStoreSettings(storeSettings);
+      console.log('Updated locally after API failure');
+      showNotification('Settings saved locally (API unavailable)', 'success');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveStoreInfo = async () => {
+    setLoading(true);
+    try {
+      await api.put('/settings/store-info', storeInfo);
+      showNotification('Store information updated successfully', 'success');
+    } catch (error) {
+      console.error('Error saving store info:', error);
+      showNotification('Failed to update store information', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    setLoading(true);
+    try {
+      await api.put('/settings/notifications', notificationSettings);
+      showNotification('Notification preferences saved successfully', 'success');
+    } catch (error) {
+      console.error('Error saving notifications:', error);
+      showNotification('Failed to save notification preferences', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showNotification('Passwords do not match', 'error');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      showNotification('Password must be at least 6 characters', 'error');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.put('/settings/change-password', {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      });
+      showNotification('Password changed successfully', 'success');
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      console.error('Error changing password:', error);
+      showNotification(error.response?.data?.message || 'Failed to change password', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeactivateAccount = () => {
+    if (window.confirm('Are you sure you want to deactivate your account? This action cannot be undone.')) {
+      // Implementation for account deactivation
+      showNotification('Account deactivation requested', 'success');
+    }
+  };
 
   const tabContent = [
     {
@@ -80,7 +215,11 @@ const Settings = () => {
                 <label className="block text-sm font-medium text-white/80 mb-2">
                   Currency
                 </label>
-                <select className="select w-full">
+                <select
+                  className="glass-input w-full"
+                  value={storeSettings.currency}
+                  onChange={(e) => setStoreSettings({ ...storeSettings, currency: e.target.value })}
+                >
                   <option value="USD">USD - US Dollar</option>
                   <option value="EUR">EUR - Euro</option>
                   <option value="GBP">GBP - British Pound</option>
@@ -112,8 +251,10 @@ const Settings = () => {
             </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary">Cancel</Button>
-            <Button variant="primary">Save Changes</Button>
+            <Button variant="secondary" onClick={() => setStoreSettings(globalStoreSettings)}>Cancel</Button>
+            <Button variant="primary" onClick={handleSaveGeneralSettings} disabled={loading}>
+              {loading ? 'Saving...' : 'Save Changes'}
+            </Button>
             </div>
           </div>
         </Card>
@@ -128,46 +269,99 @@ const Settings = () => {
           <div className="p-6 space-y-4">
           <div className="glass-card p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Business Details</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-white/60">Registration Number</span>
-                  <span className="text-white">REG-2024-001234</span>
-              </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60">Tax ID</span>
-                  <span className="text-white">TAX-9876543210</span>
-              </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60">Business Type</span>
-                  <span className="text-white">Retail - Skincare</span>
-              </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60">Established</span>
-                  <span className="text-white">January 2023</span>
-              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    Registration Number
+                  </label>
+                  <Input
+                    type="text"
+                    value={storeInfo.registrationNumber}
+                    onChange={(e) => setStoreInfo({ ...storeInfo, registrationNumber: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    Tax ID
+                  </label>
+                  <Input
+                    type="text"
+                    value={storeInfo.taxId}
+                    onChange={(e) => setStoreInfo({ ...storeInfo, taxId: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    Business Type
+                  </label>
+                  <Input
+                    type="text"
+                    value={storeInfo.businessType}
+                    onChange={(e) => setStoreInfo({ ...storeInfo, businessType: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    Established
+                  </label>
+                  <Input
+                    type="text"
+                    value={storeInfo.established}
+                    onChange={(e) => setStoreInfo({ ...storeInfo, established: e.target.value })}
+                  />
+                </div>
               </div>
             </div>
 
           <div className="glass-card p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Operating Hours</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-white/60">Monday - Friday</span>
-                  <span className="text-white">9:00 AM - 8:00 PM</span>
-              </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60">Saturday</span>
-                  <span className="text-white">10:00 AM - 6:00 PM</span>
-              </div>
-                <div className="flex justify-between">
-                  <span className="text-white/60">Sunday</span>
-                  <span className="text-white">Closed</span>
-              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    Monday - Friday
+                  </label>
+                  <Input
+                    type="text"
+                    value={storeInfo.operatingHours.weekday}
+                    onChange={(e) => setStoreInfo({
+                      ...storeInfo,
+                      operatingHours: { ...storeInfo.operatingHours, weekday: e.target.value }
+                    })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    Saturday
+                  </label>
+                  <Input
+                    type="text"
+                    value={storeInfo.operatingHours.saturday}
+                    onChange={(e) => setStoreInfo({
+                      ...storeInfo,
+                      operatingHours: { ...storeInfo.operatingHours, saturday: e.target.value }
+                    })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    Sunday
+                  </label>
+                  <Input
+                    type="text"
+                    value={storeInfo.operatingHours.sunday}
+                    onChange={(e) => setStoreInfo({
+                      ...storeInfo,
+                      operatingHours: { ...storeInfo.operatingHours, sunday: e.target.value }
+                    })}
+                  />
+                </div>
               </div>
             </div>
 
           <div className="flex justify-end pt-4">
-            <Button variant="primary">Update Store Info</Button>
+            <Button variant="primary" onClick={handleSaveStoreInfo} disabled={loading}>
+              {loading ? 'Updating...' : 'Update Store Info'}
+            </Button>
             </div>
           </div>
         </Card>
@@ -211,7 +405,9 @@ const Settings = () => {
             ))}
 
           <div className="flex justify-end pt-4">
-            <Button variant="primary">Save Preferences</Button>
+            <Button variant="primary" onClick={handleSaveNotifications} disabled={loading}>
+              {loading ? 'Saving...' : 'Save Preferences'}
+            </Button>
             </div>
           </div>
         </Card>
@@ -231,22 +427,39 @@ const Settings = () => {
                   <label className="block text-sm font-medium text-white/80 mb-2">
                     Current Password
                   </label>
-                  <Input type="password" placeholder="Enter current password" />
+                  <Input
+                    type="password"
+                    placeholder="Enter current password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                  />
               </div>
                 <div>
                   <label className="block text-sm font-medium text-white/80 mb-2">
                     New Password
                   </label>
-                  <Input type="password" placeholder="Enter new password" />
+                  <Input
+                    type="password"
+                    placeholder="Enter new password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  />
               </div>
                 <div>
                   <label className="block text-sm font-medium text-white/80 mb-2">
                     Confirm New Password
                   </label>
-                  <Input type="password" placeholder="Confirm new password" />
+                  <Input
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  />
               </div>
                 <div className="flex justify-end">
-                  <Button variant="primary">Update Password</Button>
+                  <Button variant="primary" onClick={handleChangePassword} disabled={loading}>
+                    {loading ? 'Updating...' : 'Update Password'}
+                  </Button>
               </div>
               </div>
             </div>
@@ -256,7 +469,7 @@ const Settings = () => {
             <p className="text-sm text-white/60 mb-4">
                 Irreversible actions that affect your account
               </p>
-            <Button variant="danger">Deactivate Account</Button>
+            <Button variant="danger" onClick={handleDeactivateAccount}>Deactivate Account</Button>
             </div>
           </div>
         </Card>
@@ -266,6 +479,25 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen">
+      {/* Debug Component - Remove in production */}
+      <StoreNameDisplay />
+
+      {/* Notification Toast */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 z-50 animate-fade-in">
+          <div className={`glass-card p-4 flex items-center gap-3 ${
+            notification.type === 'success' ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'
+          }`}>
+            {notification.type === 'success' ? (
+              <CheckCircleIcon className="w-6 h-6 text-green-500" />
+            ) : (
+              <XCircleIcon className="w-6 h-6 text-red-500" />
+            )}
+            <span className="text-white">{notification.message}</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-0">
         <Sidebar
           isOpen={isSidebarOpen}

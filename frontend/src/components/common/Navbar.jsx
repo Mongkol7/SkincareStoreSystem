@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { useStoreSettings } from '../../context/StoreSettingsContext';
 import {
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
@@ -9,6 +10,7 @@ import {
 
 const Navbar = ({ user, onMenuToggle }) => {
   const navigate = useNavigate();
+  const { storeSettings } = useStoreSettings();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
@@ -65,7 +67,7 @@ const Navbar = ({ user, onMenuToggle }) => {
             <Bars3Icon className="w-6 h-6 text-white" />
           </button>
           <div>
-            <h1 className="text-lg font-bold text-white">Skincare POS</h1>
+            <h1 className="text-lg font-bold text-white">{storeSettings.name}</h1>
             <p className="text-xs text-white/60">Point of Sale System</p>
           </div>
         </div>

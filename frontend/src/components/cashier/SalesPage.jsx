@@ -13,6 +13,9 @@ import {
   PlusIcon,
   MinusIcon,
   ArrowLeftIcon,
+  ReceiptPercentIcon,
+  ClockIcon,
+  EyeIcon,
 } from '@heroicons/react/24/outline';
 
 const SalesPage = () => {
@@ -22,6 +25,52 @@ const SalesPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [moneyReceived, setMoneyReceived] = useState('');
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [showReceiptDetail, setShowReceiptDetail] = useState(false);
+  const [recentReceipts, setRecentReceipts] = useState([
+    {
+      id: 'RCP-001',
+      date: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
+      items: 3,
+      total: 82.49,
+      payment: 'Cash',
+      moneyReceived: 100.00,
+      change: 17.51,
+      cartItems: [
+        { name: 'Hydrating Cleanser', quantity: 1, price: 24.99 },
+        { name: 'Vitamin C Serum', quantity: 1, price: 45.00 },
+        { name: 'Toner Essence', quantity: 1, price: 22.00 },
+      ],
+    },
+    {
+      id: 'RCP-002',
+      date: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
+      items: 2,
+      total: 69.99,
+      payment: 'Cash',
+      moneyReceived: 70.00,
+      change: 0.01,
+      cartItems: [
+        { name: 'Vitamin C Serum', quantity: 1, price: 45.00 },
+        { name: 'Hydrating Cleanser', quantity: 1, price: 24.99 },
+      ],
+    },
+    {
+      id: 'RCP-003',
+      date: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
+      items: 5,
+      total: 124.45,
+      payment: 'Cash',
+      moneyReceived: 150.00,
+      change: 25.55,
+      cartItems: [
+        { name: 'Sunscreen SPF 50', quantity: 2, price: 28.00 },
+        { name: 'Moisturizing Cream', quantity: 1, price: 32.50 },
+        { name: 'Face Mask Pack', quantity: 2, price: 15.99 },
+      ],
+    },
+  ]);
 
   // Mock products data
   const products = [
@@ -99,14 +148,62 @@ const SalesPage = () => {
     return calculateSubtotal() - calculateDiscount();
   };
 
+  const calculateChange = () => {
+    const received = parseFloat(moneyReceived) || 0;
+    const total = calculateTotal();
+    return received - total;
+  };
+
+  const formatTimeAgo = (dateString) => {
+    const now = new Date();
+    const past = new Date(dateString);
+    const diffInMinutes = Math.floor((now - past) / (1000 * 60));
+
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d ago`;
+  };
+
   const handleCheckout = () => {
+    // Validate that money received is sufficient
+    const change = calculateChange();
+    if (change < 0) {
+      alert('Insufficient payment amount');
+      return;
+    }
+
+    // Create new receipt
+    const newReceipt = {
+      id: `RCP-${String(recentReceipts.length + 1).padStart(3, '0')}`,
+      date: new Date().toISOString(),
+      items: cart.length,
+      total: calculateTotal(),
+      payment: 'Cash',
+      moneyReceived: parseFloat(moneyReceived),
+      change: change,
+      cartItems: cart.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    };
+
+    // Add to recent receipts (keep last 5)
+    setRecentReceipts([newReceipt, ...recentReceipts].slice(0, 5));
+
     // TODO: Process payment and create sale
     console.log('Processing sale...', {
       items: cart,
       paymentMethod,
       total: calculateTotal(),
+      moneyReceived: parseFloat(moneyReceived),
+      change: change,
     });
     setCart([]);
+    setMoneyReceived('');
     setShowCheckout(false);
   };
 
@@ -194,10 +291,86 @@ const SalesPage = () => {
             />
 
           {cart.length === 0 ? (
-            <div className="text-center py-8">
-              <ShoppingCartIcon className="w-16 h-16 text-white/20 mx-auto mb-3" />
-              <p className="text-white/60 text-sm">Cart is empty</p>
-            </div>
+            <>
+              <div className="text-center py-8 border-b border-white/10">
+                <ShoppingCartIcon className="w-16 h-16 text-white/20 mx-auto mb-3" />
+                <p className="text-white/60 text-sm">Cart is empty</p>
+              </div>
+
+              {/* Recent Receipts */}
+              <div className="mt-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <ReceiptPercentIcon className="w-5 h-5 text-white/60" />
+                  <h3 className="text-sm font-semibold text-white">Recent Receipts</h3>
+                </div>
+
+                {recentReceipts.length === 0 ? (
+                  <div className="text-center py-6">
+                    <p className="text-xs text-white/40">No recent transactions</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {recentReceipts.map((receipt) => (
+                      <div
+                        key={receipt.id}
+                        className="glass-card p-4"
+                      >
+                        {/* Header */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="text-sm font-semibold text-white">
+                                {receipt.id}
+                              </h4>
+                              <Badge variant="success" size="sm">{receipt.payment}</Badge>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-white/60">
+                              <ClockIcon className="w-3 h-3" />
+                              <span>{formatTimeAgo(receipt.date)}</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-white/60 mb-0.5">
+                              {receipt.items} {receipt.items === 1 ? 'item' : 'items'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Transaction Details */}
+                        <div className="space-y-2 mb-3 pb-3 border-b border-white/10">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-white/60">Total:</span>
+                            <span className="text-white font-semibold">${receipt.total.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-white/60">Cash Received:</span>
+                            <span className="text-success-400 font-semibold">+${receipt.moneyReceived.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-white/60">Change Given:</span>
+                            <span className="text-primary-400 font-semibold">-${receipt.change.toFixed(2)}</span>
+                          </div>
+                        </div>
+
+                        {/* View Details Button */}
+                        <Button
+                          variant="glass"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => {
+                            setSelectedReceipt(receipt);
+                            setShowReceiptDetail(true);
+                          }}
+                        >
+                          <EyeIcon className="w-4 h-4 mr-1" />
+                          View Details
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <>
               {/* Cart Items */}
@@ -282,24 +455,67 @@ const SalesPage = () => {
         title="Complete Payment"
       >
         <div className="space-y-6">
+          {/* Total Amount */}
           <div className="glass-card p-5">
             <p className="text-sm text-white/60 mb-1">Total Amount</p>
             <p className="text-3xl font-bold text-white">${calculateTotal().toFixed(2)}</p>
           </div>
 
-          <Select
-            label="Payment Method"
-            name="payment_method"
-            value={paymentMethod}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-            options={paymentMethods}
-          />
+          {/* Payment Method - Cash Only */}
+          <div>
+            <label className="input-label">Payment Method</label>
+            <div className="glass-card p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-white font-medium">Cash</span>
+                <Badge variant="success">Only Method</Badge>
+              </div>
+            </div>
+          </div>
+
+          {/* Money Received Input */}
+          <div>
+            <Input
+              label="Money Received"
+              type="number"
+              name="money_received"
+              value={moneyReceived}
+              onChange={(e) => setMoneyReceived(e.target.value)}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
+
+          {/* Change Display */}
+          {moneyReceived && (
+            <div className={`glass-card p-5 border-2 ${
+              calculateChange() < 0
+                ? 'border-danger-500/50 bg-danger-500/10'
+                : 'border-success-500/50 bg-success-500/10'
+            }`}>
+              <p className="text-sm text-white/60 mb-1">Change to Return</p>
+              <p className={`text-3xl font-bold ${
+                calculateChange() < 0 ? 'text-danger-400' : 'text-success-400'
+              }`}>
+                {calculateChange() < 0 ? '-' : ''}${Math.abs(calculateChange()).toFixed(2)}
+              </p>
+              {calculateChange() < 0 && (
+                <p className="text-xs text-danger-300 mt-2">
+                  Insufficient payment - need ${Math.abs(calculateChange()).toFixed(2)} more
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-3">
             <Button
               variant="secondary"
               className="flex-1"
-              onClick={() => setShowCheckout(false)}
+              onClick={() => {
+                setShowCheckout(false);
+                setMoneyReceived('');
+              }}
             >
               Cancel
             </Button>
@@ -307,12 +523,89 @@ const SalesPage = () => {
               variant="success"
               className="flex-1"
               onClick={handleCheckout}
+              disabled={!moneyReceived || calculateChange() < 0}
             >
               Complete Sale
             </Button>
           </div>
         </div>
       </Modal>
+
+      {/* Receipt Details Modal */}
+      {selectedReceipt && (
+        <Modal
+          isOpen={showReceiptDetail}
+          onClose={() => {
+            setShowReceiptDetail(false);
+            setSelectedReceipt(null);
+          }}
+          title="Receipt Details"
+        >
+          <div className="space-y-6">
+            {/* Receipt Header */}
+            <div className="text-center pb-4 border-b border-white/10">
+              <h3 className="text-2xl font-bold text-white mb-2">
+                {selectedReceipt.id}
+              </h3>
+              <p className="text-sm text-white/60">
+                {new Date(selectedReceipt.date).toLocaleString()}
+              </p>
+              <Badge variant="success" className="mt-2">{selectedReceipt.payment}</Badge>
+            </div>
+
+            {/* Items List */}
+            <div>
+              <h4 className="text-sm font-semibold text-white mb-3">Items Purchased</h4>
+              <div className="space-y-2">
+                {selectedReceipt.cartItems.map((item, index) => (
+                  <div key={index} className="glass-card p-3">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-sm text-white font-medium">{item.name}</span>
+                      <span className="text-sm text-white font-semibold">
+                        ${(item.price * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-white/60">
+                      <span>${item.price.toFixed(2)} × {item.quantity}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment Summary */}
+            <div className="glass-card p-4">
+              <h4 className="text-sm font-semibold text-white mb-3">Payment Summary</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/60">Total Amount:</span>
+                  <span className="text-white font-bold">${selectedReceipt.total.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/60">Cash Received:</span>
+                  <span className="text-success-400 font-bold">+${selectedReceipt.moneyReceived.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 border-t border-white/10">
+                  <span className="text-white/80">Change Given:</span>
+                  <span className="text-primary-400 font-bold text-lg">-${selectedReceipt.change.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Close Button */}
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                setShowReceiptDetail(false);
+                setSelectedReceipt(null);
+              }}
+            >
+              Close
+            </Button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

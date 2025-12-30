@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
@@ -8,6 +8,7 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Modal from '../components/common/Modal';
 import Tabs from '../components/common/Tabs';
+import ExportDropdown from '../components/common/ExportDropdown';
 import { MagnifyingGlassIcon, ArrowPathIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 
 const Inventory = () => {
@@ -17,6 +18,10 @@ const Inventory = () => {
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
+  const exportButtonRef = useRef(null);
+  const exportMenuRef = useRef(null);
   const [adjustmentForm, setAdjustmentForm] = useState({
     quantity: '',
     reason: 'Damaged',
@@ -258,6 +263,181 @@ const Inventory = () => {
     });
   };
 
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      // TODO: Replace with actual API call
+      // await inventoryService.syncInventory();
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      console.log('Inventory synced successfully');
+      // In a real app, you would refresh the data here
+    } catch (error) {
+      console.error('Sync failed:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        exportButtonRef.current &&
+        exportMenuRef.current &&
+        !exportButtonRef.current.contains(event.target) &&
+        !exportMenuRef.current.contains(event.target)
+      ) {
+        setIsExportDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleExportCSV = () => {
+    // Prepare CSV data
+    const headers = ['Date', 'Time', 'Product', 'Type', 'Quantity', 'Reference', 'Stock After'];
+    const csvData = [
+      headers.join(','),
+      ...inventoryMovements.map(movement => [
+        movement.date,
+        movement.time,
+        `"${movement.product}"`,
+        movement.type,
+        movement.quantity,
+        movement.reference,
+        movement.stockAfter
+      ].join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `inventory-movements-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setIsExportDropdownOpen(false);
+  };
+
+  const handleExportExcel = () => {
+    // Create Excel-compatible CSV with BOM for proper encoding
+    const headers = ['Date', 'Time', 'Product', 'Type', 'Quantity', 'Reference', 'Stock After'];
+    const csvData = [
+      headers.join(','),
+      ...inventoryMovements.map(movement => [
+        movement.date,
+        movement.time,
+        `"${movement.product}"`,
+        movement.type,
+        movement.quantity,
+        movement.reference,
+        movement.stockAfter
+      ].join(','))
+    ].join('\n');
+
+    // Add BOM for Excel
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvData], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `inventory-movements-${new Date().toISOString().split('T')[0]}.xls`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setIsExportDropdownOpen(false);
+  };
+
+  const handleExportPDF = () => {
+    // Create HTML table for PDF
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Inventory Movements Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { color: #333; margin-bottom: 20px; }
+          .report-info { margin-bottom: 20px; color: #666; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background-color: #4a5568; color: white; padding: 12px; text-align: left; font-weight: bold; }
+          td { padding: 10px; border-bottom: 1px solid #ddd; }
+          tr:hover { background-color: #f5f5f5; }
+          .positive { color: #10b981; }
+          .negative { color: #ef4444; }
+        </style>
+      </head>
+      <body>
+        <h1>Inventory Movements Report</h1>
+        <div class="report-info">
+          <p>Generated: ${new Date().toLocaleString()}</p>
+          <p>Total Records: ${inventoryMovements.length}</p>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Product</th>
+              <th>Type</th>
+              <th>Quantity</th>
+              <th>Reference</th>
+              <th>Stock After</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${inventoryMovements.map(movement => `
+              <tr>
+                <td>${movement.date}</td>
+                <td>${movement.time}</td>
+                <td>${movement.product}</td>
+                <td>${movement.type}</td>
+                <td class="${movement.quantity > 0 ? 'positive' : 'negative'}">${movement.quantity > 0 ? '+' : ''}${movement.quantity}</td>
+                <td>${movement.reference}</td>
+                <td>${movement.stockAfter}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    // Create blob and open in new window for printing/PDF saving
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url, '_blank');
+
+    // Wait for content to load then trigger print dialog
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+
+    setIsExportDropdownOpen(false);
+  };
+
+  // Filter stock levels based on search term
+  const filteredStockLevels = stockLevels.filter(item =>
+    item.product.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const tabContent = [
     {
       label: 'Stock Levels',
@@ -277,14 +457,17 @@ const Inventory = () => {
                     className="pl-10 w-64"
                   />
               </div>
-                <Button variant="secondary" size="sm">
-                  <ArrowPathIcon className="w-4 h-4 mr-2" />
-                  Sync
-                </Button>
+                <button
+                  onClick={handleSync}
+                  disabled={isSyncing}
+                  className="h-[42px] px-3 bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center justify-center"
+                >
+                  <ArrowPathIcon className={`w-5 h-5 text-white ${isSyncing ? 'animate-spin' : ''}`} />
+                </button>
               </div>
             }
           />
-          <Table columns={stockColumns} data={stockLevels} />
+          <Table columns={stockColumns} data={filteredStockLevels} />
         </Card>
       ),
     },
@@ -295,10 +478,17 @@ const Inventory = () => {
           <CardHeader
             title="Recent Inventory Movements"
             action={
-            <Button variant="secondary" size="sm">
-                <DocumentArrowDownIcon className="w-4 h-4 mr-2" />
-                Export
-              </Button>
+              <ExportDropdown
+                isOpen={isExportDropdownOpen}
+                onToggle={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
+                onExportCSV={handleExportCSV}
+                onExportExcel={handleExportExcel}
+                onExportPDF={handleExportPDF}
+                buttonRef={exportButtonRef}
+                menuRef={exportMenuRef}
+                variant="secondary"
+                size="sm"
+              />
             }
           />
           <Table columns={movementColumns} data={inventoryMovements} />

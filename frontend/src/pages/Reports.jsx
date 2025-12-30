@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
@@ -8,6 +8,7 @@ import Button from '../components/common/Button';
 import Select from '../components/common/Select';
 import Tabs from '../components/common/Tabs';
 import Table from '../components/common/Table';
+import ExportDropdown from '../components/common/ExportDropdown';
 import {
   CurrencyDollarIcon,
   ShoppingCartIcon,
@@ -15,12 +16,36 @@ import {
   DocumentArrowDownIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
+import {
+  exportToCSV,
+  exportToExcel,
+  exportToPDF,
+  formatSalesReportForExport,
+  formatProductPerformanceForExport,
+  formatDailySalesForExport,
+  formatMonthlySalesForExport,
+  formatCategoryDataForExport,
+} from '../utils/exportUtils';
 
 const Reports = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('last30days');
+
+  // Export menu states
+  const [showSalesExportMenu, setShowSalesExportMenu] = useState(false);
+  const [showProductExportMenu, setShowProductExportMenu] = useState(false);
+  const [showAnalyticsExportMenu, setShowAnalyticsExportMenu] = useState(false);
+
+  // Refs for export menus
+  const salesExportMenuRef = useRef(null);
+  const salesExportButtonRef = useRef(null);
+  const productExportMenuRef = useRef(null);
+  const productExportButtonRef = useRef(null);
+  const analyticsExportMenuRef = useRef(null);
+  const analyticsExportButtonRef = useRef(null);
 
   // Mock data for charts
   const dailySalesData = [
@@ -67,6 +92,116 @@ const Reports = () => {
   const maxDailySales = Math.max(...dailySalesData.map(d => d.sales));
   const maxMonthlySales = Math.max(...monthlySalesData.map(d => Math.max(d.sales, d.target)));
   const totalCategorySales = categoryData.reduce((sum, cat) => sum + cat.sales, 0);
+
+  // Close export menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Sales export menu
+      if (
+        showSalesExportMenu &&
+        salesExportMenuRef.current &&
+        !salesExportMenuRef.current.contains(event.target) &&
+        salesExportButtonRef.current &&
+        !salesExportButtonRef.current.contains(event.target)
+      ) {
+        setShowSalesExportMenu(false);
+      }
+
+      // Product export menu
+      if (
+        showProductExportMenu &&
+        productExportMenuRef.current &&
+        !productExportMenuRef.current.contains(event.target) &&
+        productExportButtonRef.current &&
+        !productExportButtonRef.current.contains(event.target)
+      ) {
+        setShowProductExportMenu(false);
+      }
+
+      // Analytics export menu
+      if (
+        showAnalyticsExportMenu &&
+        analyticsExportMenuRef.current &&
+        !analyticsExportMenuRef.current.contains(event.target) &&
+        analyticsExportButtonRef.current &&
+        !analyticsExportButtonRef.current.contains(event.target)
+      ) {
+        setShowAnalyticsExportMenu(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSalesExportMenu, showProductExportMenu, showAnalyticsExportMenu]);
+
+  // Export handlers for Sales Report
+  const handleExportSalesCSV = () => {
+    const formattedData = formatSalesReportForExport(salesData);
+    const filename = `sales_report_${new Date().toISOString().split('T')[0]}.csv`;
+    exportToCSV(formattedData, filename);
+    setShowSalesExportMenu(false);
+  };
+
+  const handleExportSalesExcel = () => {
+    const formattedData = formatSalesReportForExport(salesData);
+    const filename = `sales_report_${new Date().toISOString().split('T')[0]}.xls`;
+    exportToExcel(formattedData, filename);
+    setShowSalesExportMenu(false);
+  };
+
+  const handleExportSalesPDF = () => {
+    const formattedData = formatSalesReportForExport(salesData);
+    exportToPDF(formattedData, 'sales_report.pdf', 'Monthly Sales Performance Report');
+    setShowSalesExportMenu(false);
+  };
+
+  // Export handlers for Product Performance
+  const handleExportProductCSV = () => {
+    const formattedData = formatProductPerformanceForExport(productPerformance);
+    const filename = `product_performance_${new Date().toISOString().split('T')[0]}.csv`;
+    exportToCSV(formattedData, filename);
+    setShowProductExportMenu(false);
+  };
+
+  const handleExportProductExcel = () => {
+    const formattedData = formatProductPerformanceForExport(productPerformance);
+    const filename = `product_performance_${new Date().toISOString().split('T')[0]}.xls`;
+    exportToExcel(formattedData, filename);
+    setShowProductExportMenu(false);
+  };
+
+  const handleExportProductPDF = () => {
+    const formattedData = formatProductPerformanceForExport(productPerformance);
+    exportToPDF(formattedData, 'product_performance.pdf', 'Top Selling Products Report');
+    setShowProductExportMenu(false);
+  };
+
+  // Export handlers for Analytics (Daily Sales)
+  const handleExportAnalyticsCSV = () => {
+    const formattedData = formatDailySalesForExport(dailySalesData);
+    const filename = `daily_sales_analytics_${new Date().toISOString().split('T')[0]}.csv`;
+    exportToCSV(formattedData, filename);
+    setShowAnalyticsExportMenu(false);
+  };
+
+  const handleExportAnalyticsExcel = () => {
+    const formattedData = formatDailySalesForExport(dailySalesData);
+    const filename = `daily_sales_analytics_${new Date().toISOString().split('T')[0]}.xls`;
+    exportToExcel(formattedData, filename);
+    setShowAnalyticsExportMenu(false);
+  };
+
+  const handleExportAnalyticsPDF = () => {
+    const formattedData = formatDailySalesForExport(dailySalesData);
+    exportToPDF(formattedData, 'daily_sales_analytics.pdf', 'Daily Sales Trend Report');
+    setShowAnalyticsExportMenu(false);
+  };
 
   const salesColumns = [
     { field: 'period', label: 'Period' },
@@ -119,10 +254,16 @@ const Reports = () => {
           <CardHeader
             title="Monthly Sales Performance"
             action={
-              <Button variant="primary" size="sm">
-                <DocumentArrowDownIcon className="w-4 h-4 mr-2" />
-                Export
-              </Button>
+              <ExportDropdown
+                isOpen={showSalesExportMenu}
+                onToggle={() => setShowSalesExportMenu(!showSalesExportMenu)}
+                onExportCSV={handleExportSalesCSV}
+                onExportExcel={handleExportSalesExcel}
+                onExportPDF={handleExportSalesPDF}
+                buttonRef={salesExportButtonRef}
+                menuRef={salesExportMenuRef}
+                variant="primary"
+              />
             }
           />
           <Table columns={salesColumns} data={salesData} />
@@ -137,10 +278,16 @@ const Reports = () => {
           <CardHeader
             title="Top Selling Products"
             action={
-              <Button variant="primary" size="sm">
-                <DocumentArrowDownIcon className="w-4 h-4 mr-2" />
-                Export
-              </Button>
+              <ExportDropdown
+                isOpen={showProductExportMenu}
+                onToggle={() => setShowProductExportMenu(!showProductExportMenu)}
+                onExportCSV={handleExportProductCSV}
+                onExportExcel={handleExportProductExcel}
+                onExportPDF={handleExportProductPDF}
+                buttonRef={productExportButtonRef}
+                menuRef={productExportMenuRef}
+                variant="primary"
+              />
             }
           />
           <Table columns={productColumns} data={productPerformance} />
@@ -173,10 +320,16 @@ const Reports = () => {
               title="Daily Sales Trend"
               subtitle="Last 7 days performance"
               action={
-                <Button variant="secondary" size="sm">
-                  <DocumentArrowDownIcon className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
+                <ExportDropdown
+                  isOpen={showAnalyticsExportMenu}
+                  onToggle={() => setShowAnalyticsExportMenu(!showAnalyticsExportMenu)}
+                  onExportCSV={handleExportAnalyticsCSV}
+                  onExportExcel={handleExportAnalyticsExcel}
+                  onExportPDF={handleExportAnalyticsPDF}
+                  buttonRef={analyticsExportButtonRef}
+                  menuRef={analyticsExportMenuRef}
+                  variant="secondary"
+                />
               }
             />
             <div className="p-6">
