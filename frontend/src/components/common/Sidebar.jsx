@@ -13,7 +13,11 @@ import {
 const Sidebar = ({ isOpen, onClose, userRole }) => {
   const getMenuItems = () => {
     // Dashboard path varies by role
-    const dashboardPath = userRole === 'HR' ? '/hr/dashboard' : '/dashboard';
+    const dashboardPath =
+      userRole === 'HR' ? '/hr/dashboard' :
+      userRole === 'Cashier' ? '/cashier/dashboard' :
+      userRole === 'Stock Manager' ? '/stock-manager/dashboard' :
+      '/dashboard';
 
     const baseItems = [
       { to: dashboardPath, icon: HomeIcon, label: 'Dashboard' },

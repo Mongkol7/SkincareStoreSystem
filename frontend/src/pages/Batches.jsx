@@ -5,6 +5,7 @@ import Sidebar from '../components/common/Sidebar';
 import Card, { CardHeader } from '../components/common/Card';
 import Table from '../components/common/Table';
 import Button from '../components/common/Button';
+import Modal from '../components/common/Modal';
 import {
   ClockIcon,
   CheckCircleIcon,
@@ -14,6 +15,8 @@ import {
 const Batches = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState(null);
 
   // Mock batch data
   const batches = [
@@ -122,8 +125,16 @@ const Batches = () => {
     {
       field: 'actions',
       label: 'Actions',
-      render: () => (
-        <Button variant="secondary" size="sm">
+      render: (_, row) => (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedBatch(row);
+            setIsViewModalOpen(true);
+          }}
+        >
           View Details
         </Button>
       ),
@@ -210,6 +221,106 @@ const Batches = () => {
           </Card>
         </div>
       </div>
+
+      {/* View Batch Details Modal */}
+      <Modal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        title="Batch Details"
+        size="lg"
+      >
+        {selectedBatch && (
+          <div className="space-y-6">
+            {/* Batch Information */}
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Batch Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Batch Number</p>
+                  <p className="text-sm text-white font-medium">{selectedBatch.batchNumber}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Date</p>
+                  <p className="text-sm text-white font-medium">{selectedBatch.date}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Cashier</p>
+                  <p className="text-sm text-white font-medium">{selectedBatch.cashier}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Status</p>
+                  <span className={`badge ${selectedBatch.status === 'Closed' ? 'badge-success' : 'badge-primary'}`}>
+                    {selectedBatch.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Time Information */}
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Operating Hours</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Open Time</p>
+                  <p className="text-sm text-white font-medium">{selectedBatch.openTime}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Close Time</p>
+                  <p className="text-sm text-white font-medium">{selectedBatch.closeTime}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Financial Summary */}
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Financial Summary</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Opening Cash</p>
+                  <p className="text-lg text-white font-bold">${selectedBatch.openingCash.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Total Sales</p>
+                  <p className="text-lg text-success-400 font-bold">${selectedBatch.totalSales.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Closing Cash</p>
+                  <p className="text-lg text-white font-bold">${selectedBatch.closingCash.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Total Transactions</p>
+                  <p className="text-lg text-white font-bold">{selectedBatch.transactions}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Performance Metrics */}
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Performance</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Average Transaction</p>
+                  <p className="text-sm text-white font-medium">
+                    ${(selectedBatch.totalSales / selectedBatch.transactions).toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Cash Variance</p>
+                  <p className="text-sm text-white font-medium">
+                    ${(selectedBatch.closingCash - selectedBatch.openingCash - selectedBatch.totalSales).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4">
+              <Button variant="secondary" onClick={() => setIsViewModalOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
