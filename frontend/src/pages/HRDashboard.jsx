@@ -36,7 +36,10 @@ const HRDashboard = () => {
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
   const [isViewUserModalOpen, setIsViewUserModalOpen] = useState(false);
   const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
+  const [isViewStaffModalOpen, setIsViewStaffModalOpen] = useState(false);
+  const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedStaff, setSelectedStaff] = useState(null);
 
   // Form states
   const [userForm, setUserForm] = useState({
@@ -46,6 +49,15 @@ const HRDashboard = () => {
     role: 'Cashier',
     password: '',
     confirmPassword: '',
+  });
+
+  const [staffForm, setStaffForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    role: 'Cashier',
+    hire_date: '',
+    status: 'Active',
   });
 
   const stats = {
@@ -240,6 +252,25 @@ const HRDashboard = () => {
     setSelectedUser(null);
   };
 
+  const handleViewStaff = (staff) => {
+    setSelectedStaff(staff);
+    setIsViewStaffModalOpen(true);
+  };
+
+  const handleAddStaff = (e) => {
+    e.preventDefault();
+    console.log('Add staff:', staffForm);
+    setIsAddStaffModalOpen(false);
+    setStaffForm({
+      name: '',
+      email: '',
+      phone: '',
+      role: 'Cashier',
+      hire_date: '',
+      status: 'Active',
+    });
+  };
+
   const staffColumns = [
     {
       field: 'name',
@@ -270,16 +301,16 @@ const HRDashboard = () => {
     {
       field: 'id',
       label: 'Action',
-      render: (value) => (
+      render: (value, row) => (
         <Button
           variant="secondary"
           size="sm"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/hr/staff/${value}`);
+            handleViewStaff(row);
           }}
         >
-          View
+          View Details
         </Button>
       ),
     },
@@ -515,7 +546,7 @@ const HRDashboard = () => {
               <Button
                 variant="success"
                 size="sm"
-                onClick={() => navigate('/hr/staff/new')}
+                onClick={() => setIsAddStaffModalOpen(true)}
               >
                 <UserPlusIcon className="w-4 h-4 mr-2" />
                 Add New Staff
@@ -988,6 +1019,227 @@ const HRDashboard = () => {
           </div>
         </div>
       )}
+    </Modal>
+
+    {/* View Staff Details Modal */}
+    <Modal
+      isOpen={isViewStaffModalOpen}
+      onClose={() => setIsViewStaffModalOpen(false)}
+      title="Staff Details"
+      size="lg"
+    >
+      {selectedStaff && (
+        <div className="space-y-6">
+          {/* Personal Information */}
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Personal Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-white/60 mb-1">Full Name</p>
+                <p className="text-sm text-white font-medium">{selectedStaff.name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">Email</p>
+                <p className="text-sm text-white font-medium">{selectedStaff.email}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">Phone Number</p>
+                <p className="text-sm text-white font-medium">{selectedStaff.phone}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">Staff ID</p>
+                <p className="text-sm text-white font-medium">#{selectedStaff.id}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Employment Information */}
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Employment Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-white/60 mb-1">Role</p>
+                <span className={`badge ${
+                  selectedStaff.role === 'Admin' ? 'badge-danger' :
+                  selectedStaff.role === 'Stock Manager' ? 'badge-primary' :
+                  'badge-success'
+                }`}>
+                  {selectedStaff.role}
+                </span>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">Status</p>
+                <Badge variant={selectedStaff.status === 'Active' ? 'success' : 'danger'}>
+                  {selectedStaff.status}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">Hire Date</p>
+                <p className="text-sm text-white font-medium">{new Date(selectedStaff.hire_date).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/60 mb-1">Time with Company</p>
+                <p className="text-sm text-white font-medium">
+                  {Math.floor((new Date() - new Date(selectedStaff.hire_date)) / (1000 * 60 * 60 * 24 * 30))} months
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Details */}
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Additional Details</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/80">Department</span>
+                <span className="text-sm text-white font-medium">
+                  {selectedStaff.role === 'Admin' ? 'Administration' :
+                   selectedStaff.role === 'Stock Manager' ? 'Inventory Management' :
+                   'Sales'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/80">Employment Type</span>
+                <span className="text-sm text-white font-medium">Full-time</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/80">Reports To</span>
+                <span className="text-sm text-white font-medium">
+                  {selectedStaff.role === 'Admin' ? 'CEO' : 'HR Manager'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance Summary */}
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Performance Summary</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">
+                  {selectedStaff.status === 'Active' ? '98%' : 'N/A'}
+                </p>
+                <p className="text-xs text-white/60 mt-1">Attendance Rate</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">
+                  {selectedStaff.role === 'Cashier' ? '150+' : 'N/A'}
+                </p>
+                <p className="text-xs text-white/60 mt-1">Transactions</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-success-400">Excellent</p>
+                <p className="text-xs text-white/60 mt-1">Performance Rating</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end pt-4">
+            <Button variant="secondary" onClick={() => setIsViewStaffModalOpen(false)}>
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setIsViewStaffModalOpen(false);
+                navigate(`/hr/staff/${selectedStaff.id}/edit`);
+              }}
+            >
+              Edit Staff
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+
+    {/* Add Staff Modal */}
+    <Modal
+      isOpen={isAddStaffModalOpen}
+      onClose={() => setIsAddStaffModalOpen(false)}
+      title="Add New Staff"
+      size="lg"
+    >
+      <form onSubmit={handleAddStaff} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-white/80 mb-2">Full Name</label>
+          <Input
+            type="text"
+            value={staffForm.name}
+            onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
+            placeholder="Enter full name"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-white/80 mb-2">Email</label>
+            <Input
+              type="email"
+              value={staffForm.email}
+              onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
+              placeholder="email@skincare.com"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-white/80 mb-2">Phone Number</label>
+            <Input
+              type="tel"
+              value={staffForm.phone}
+              onChange={(e) => setStaffForm({ ...staffForm, phone: e.target.value })}
+              placeholder="555-0100"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-white/80 mb-2">Role</label>
+            <select
+              className="select w-full"
+              value={staffForm.role}
+              onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })}
+            >
+              <option value="Cashier">Cashier</option>
+              <option value="Stock Manager">Stock Manager</option>
+              <option value="HR">HR</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-white/80 mb-2">Hire Date</label>
+            <Input
+              type="date"
+              value={staffForm.hire_date}
+              onChange={(e) => setStaffForm({ ...staffForm, hire_date: e.target.value })}
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-white/80 mb-2">Employment Status</label>
+          <select
+            className="select w-full"
+            value={staffForm.status}
+            onChange={(e) => setStaffForm({ ...staffForm, status: e.target.value })}
+          >
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+
+        <div className="flex gap-3 justify-end pt-4">
+          <Button type="button" variant="secondary" onClick={() => setIsAddStaffModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="success">
+            Add Staff Member
+          </Button>
+        </div>
+      </form>
     </Modal>
     </>
   );
