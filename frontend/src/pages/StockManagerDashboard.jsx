@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { usePO } from '../context/POContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import StatsCard from '../components/common/StatsCard';
@@ -8,38 +9,27 @@ import Table from '../components/common/Table';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import Modal from '../components/common/Modal';
-import Input from '../components/common/Input';
+import ReorderModal from '../components/stockManager/ReorderModal';
 import {
   CubeIcon,
   ExclamationTriangleIcon,
   ShoppingBagIcon,
   CheckCircleIcon,
   ArrowPathIcon,
-  PlusIcon,
-  TrashIcon,
 } from '@heroicons/react/24/outline';
 
 const StockManagerDashboard = () => {
   const { user } = useAuth();
+  const { openCreatePOModal, purchaseOrders, handleReorder: createReorderPO, updatePurchaseOrder } = usePO();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isViewPOModalOpen, setIsViewPOModalOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState(null);
   const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
-  const [isCreatePOModalOpen, setIsCreatePOModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [reorderForm, setReorderForm] = useState({
     quantity: '',
-    supplier: '',
     expectedDelivery: '',
   });
-  const [poForm, setPOForm] = useState({
-    supplier: '',
-    expectedDelivery: '',
-    notes: '',
-  });
-  const [poItems, setPOItems] = useState([
-    { product: '', quantity: '', unitPrice: '' }
-  ]);
 
   const stats = {
     totalProducts: 156,
@@ -49,58 +39,31 @@ const StockManagerDashboard = () => {
   };
 
   const lowStockProducts = [
-    { id: 1, name: 'Vitamin C Serum', stock: 5, min_stock: 20, category: 'Serum', supplier: 'BeautySupply Co' },
-    { id: 2, name: 'Hydrating Cleanser', stock: 3, min_stock: 15, category: 'Cleanser', supplier: 'SkinCare Inc' },
-    { id: 3, name: 'Sunscreen SPF 50', stock: 8, min_stock: 25, category: 'Sunscreen', supplier: 'BeautySupply Co' },
-    { id: 4, name: 'Face Mask Pack', stock: 12, min_stock: 30, category: 'Mask', supplier: 'Global Cosmetics' },
+    { id: 1, name: 'Vitamin C Serum', stock: 5, min_stock: 20, category: 'Serum', supplier: 'BeautySupply Co', price: 25.99 },
+    { id: 2, name: 'Hydrating Cleanser', stock: 3, min_stock: 15, category: 'Cleanser', supplier: 'SkinCare Inc', price: 18.50 },
+    { id: 3, name: 'Sunscreen SPF 50', stock: 8, min_stock: 25, category: 'Sunscreen', supplier: 'BeautySupply Co', price: 22.00 },
+    { id: 4, name: 'Face Mask Pack', stock: 12, min_stock: 30, category: 'Mask', supplier: 'Global Cosmetics', price: 15.99 },
   ];
 
-  const purchaseOrders = [
-    {
-      id: 1,
-      po_number: 'PO-001',
-      supplier: 'BeautySupply Co',
-      items: 5,
-      total: 1250.00,
-      status: 'Pending',
-      date: '2023-12-20',
-      products: ['Vitamin C Serum', 'Sunscreen SPF 50', 'Anti-Aging Cream'],
-      itemsList: [
-        { product: 'Vitamin C Serum', quantity: 30, unitPrice: 25.00 },
-        { product: 'Sunscreen SPF 50', quantity: 50, unitPrice: 15.00 },
-        { product: 'Anti-Aging Cream', quantity: 10, unitPrice: 50.00 },
-      ]
-    },
-    {
-      id: 2,
-      po_number: 'PO-002',
-      supplier: 'SkinCare Inc',
-      items: 3,
-      total: 850.00,
-      status: 'Approved',
-      date: '2023-12-22',
-      products: ['Hydrating Cleanser', 'Toner Essence'],
-      itemsList: [
-        { product: 'Hydrating Cleanser', quantity: 40, unitPrice: 12.50 },
-        { product: 'Toner Essence', quantity: 25, unitPrice: 14.00 },
-      ]
-    },
-    {
-      id: 3,
-      po_number: 'PO-003',
-      supplier: 'Global Cosmetics',
-      items: 8,
-      total: 2100.00,
-      status: 'Received',
-      date: '2023-12-25',
-      products: ['Face Mask Pack', 'Eye Cream', 'Moisturizing Cream'],
-      itemsList: [
-        { product: 'Face Mask Pack', quantity: 100, unitPrice: 8.00 },
-        { product: 'Eye Cream', quantity: 30, unitPrice: 35.00 },
-        { product: 'Moisturizing Cream', quantity: 20, unitPrice: 22.50 },
-      ]
-    },
-  ];
+  // Check if a product has pending orders
+  const getProductOrderStatus = (productName) => {
+    const pendingOrders = purchaseOrders.filter(po =>
+      (po.status === 'Pending' || po.status === 'Approved') &&
+      po.itemsList?.some(item => item.product === productName)
+    );
+
+    if (pendingOrders.length > 0) {
+      const nearestPO = pendingOrders.sort((a, b) =>
+        new Date(a.expectedDelivery) - new Date(b.expectedDelivery)
+      )[0];
+      return {
+        isOrdered: true,
+        expectedDate: nearestPO.expectedDelivery,
+        status: nearestPO.status
+      };
+    }
+    return { isOrdered: false };
+  };
 
   const productColumns = [
     { field: 'name', label: 'Product' },
@@ -114,99 +77,125 @@ const StockManagerDashboard = () => {
         </span>
       ),
     },
-    { field: 'supplier', label: 'Supplier' },
+    {
+      field: 'supplier',
+      label: 'Supplier',
+      render: (value, row) => {
+        const orderStatus = getProductOrderStatus(row.name);
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="text-white/80">{value}</span>
+            {orderStatus.isOrdered && (
+              <span className={`text-xs px-2 py-0.5 rounded-full inline-block w-fit ${
+                orderStatus.status === 'Pending'
+                  ? 'bg-warning-500/20 text-warning-400'
+                  : 'bg-primary-500/20 text-primary-400'
+              }`}>
+                {orderStatus.status === 'Pending' ? '⏳ Pending' : '✓ Ordered'} - ETA: {orderStatus.expectedDate}
+              </span>
+            )}
+          </div>
+        );
+      }
+    },
     {
       field: 'id',
       label: 'Action',
-      render: (value, row) => (
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => {
-            setSelectedProduct(row);
-            setReorderForm({
-              quantity: row.min_stock,
-              supplier: row.supplier,
-              expectedDelivery: '',
-            });
-            setIsReorderModalOpen(true);
-          }}
-        >
-          <ArrowPathIcon className="w-4 h-4 mr-1" />
-          Reorder
-        </Button>
-      ),
+      render: (value, row) => {
+        const orderStatus = getProductOrderStatus(row.name);
+        return (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setSelectedProduct(row);
+              setReorderForm({
+                quantity: row.min_stock - row.stock,
+                expectedDelivery: '',
+              });
+              setIsReorderModalOpen(true);
+            }}
+            disabled={orderStatus.isOrdered}
+            title={orderStatus.isOrdered ? 'Product already ordered' : 'Reorder this product'}
+          >
+            <ArrowPathIcon className="w-4 h-4 mr-1" />
+            {orderStatus.isOrdered ? 'Ordered' : 'Reorder'}
+          </Button>
+        );
+      },
     },
   ];
 
-  // Handler functions
-  const handleReorder = (e) => {
+  // Handler for REORDER - directly creates PO for existing products (no unit price needed)
+  const handleReorderSubmit = (e) => {
     e.preventDefault();
-    console.log('Reorder product:', {
-      product: selectedProduct,
-      ...reorderForm,
-    });
+
+    // Use POContext's handleReorder to create the PO
+    const newPO = createReorderPO(
+      selectedProduct,
+      reorderForm.quantity,
+      reorderForm.expectedDelivery
+    );
+
     setIsReorderModalOpen(false);
     setReorderForm({
       quantity: '',
-      supplier: '',
       expectedDelivery: '',
     });
+    alert(`✓ Reorder created! PO ${newPO.poNumber} is pending Admin approval.`);
   };
 
-  const handleCreatePO = (e) => {
-    e.preventDefault();
-    console.log('Create PO:', {
-      ...poForm,
-      items: poItems,
-    });
-    setIsCreatePOModalOpen(false);
-    setPOForm({
-      supplier: '',
-      expectedDelivery: '',
-      notes: '',
-    });
-    setPOItems([{ product: '', quantity: '', unitPrice: '' }]);
+  // Handler for CREATE BULK PO - opens modal for NEW products (requires unit price)
+  const handleCreateBulkPO = () => {
+    // This is for ordering NEW products - need to specify unit price
+    const items = lowStockProducts.map(product => ({
+      product: product.name,
+      quantity: product.min_stock - product.stock,
+      unitPrice: ''
+    }));
+    openCreatePOModal(items);
   };
 
-  const addPOItem = () => {
-    setPOItems([...poItems, { product: '', quantity: '', unitPrice: '' }]);
-  };
-
-  const removePOItem = (index) => {
-    const newItems = poItems.filter((_, i) => i !== index);
-    setPOItems(newItems);
-  };
-
-  const updatePOItem = (index, field, value) => {
-    const newItems = [...poItems];
-    newItems[index][field] = value;
-    setPOItems(newItems);
-  };
-
-  const calculatePOTotal = () => {
-    return poItems.reduce((sum, item) => {
-      const qty = parseFloat(item.quantity) || 0;
-      const price = parseFloat(item.unitPrice) || 0;
-      return sum + (qty * price);
-    }, 0);
+  // Handle mark as received for Stock Manager
+  const handleMarkAsReceived = async (po) => {
+    if (window.confirm(`Mark Purchase Order ${po.poNumber} as Received?\n\nThis confirms that all items have been received and added to inventory.`)) {
+      try {
+        await updatePurchaseOrder(po.id, { status: 'Received' });
+        alert(`✓ Purchase Order ${po.poNumber} has been marked as received!`);
+        // Refresh will happen automatically via POContext polling
+      } catch (error) {
+        alert('Failed to mark purchase order as received. Please try again.');
+      }
+    }
   };
 
   const poColumns = [
-    { field: 'po_number', label: 'PO Number' },
+    { field: 'poNumber', label: 'PO Number' },
     { field: 'supplier', label: 'Supplier' },
     {
-      field: 'products',
+      field: 'itemsList',
       label: 'Products',
-      render: (value) => (
-        <span className="text-white/80 text-sm">
-          {value.join(', ')}
-        </span>
+      render: (itemsList) => (
+        <div className="text-white/80 text-sm">
+          {itemsList && itemsList.length > 0 ? (
+            itemsList.length === 1 ? (
+              <span>{itemsList[0].product}</span>
+            ) : (
+              <span>{itemsList[0].product} +{itemsList.length - 1} more</span>
+            )
+          ) : (
+            <span>-</span>
+          )}
+        </div>
       ),
     },
-    { field: 'items', label: 'Items' },
     {
-      field: 'total',
+      field: 'items',
+      label: 'Qty',
+      render: (value) => <span className="text-white/80">{value}</span>
+    },
+    {
+      field: 'totalAmount',
       label: 'Total',
       render: (value) => `$${value.toFixed(2)}`,
     },
@@ -223,6 +212,28 @@ const StockManagerDashboard = () => {
       },
     },
     { field: 'date', label: 'Date' },
+    {
+      field: 'markReceived',
+      label: 'Receive',
+      render: (_, row) => {
+        if (row.status === 'Approved') {
+          return (
+            <Button
+              variant="success"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMarkAsReceived(row);
+              }}
+              title="Mark as Received"
+            >
+              Mark Received
+            </Button>
+          );
+        }
+        return <span className="text-white/40 text-sm">-</span>;
+      },
+    },
     {
       field: 'actions',
       label: 'Actions',
@@ -256,7 +267,7 @@ const StockManagerDashboard = () => {
 
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-white mb-2">
-              Inventory Management
+              Stock Manager Dashboard - Inventory Management
             </h2>
             <p className="text-white/60 text-sm">
               Monitor stock levels and manage purchase orders
@@ -302,7 +313,7 @@ const StockManagerDashboard = () => {
                 <Button
                   variant="warning"
                   size="sm"
-                  onClick={() => setIsCreatePOModalOpen(true)}
+                  onClick={handleCreateBulkPO}
                 >
                   Create Bulk PO
                 </Button>
@@ -319,7 +330,7 @@ const StockManagerDashboard = () => {
                 <Button
                   variant="success"
                   size="sm"
-                  onClick={() => setIsCreatePOModalOpen(true)}
+                  onClick={() => openCreatePOModal()}
                 >
                   Create New PO
                 </Button>
@@ -348,7 +359,7 @@ const StockManagerDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-white/60 mb-1">PO Number</p>
-                  <p className="text-sm text-white font-medium">{selectedPO.po_number}</p>
+                  <p className="text-sm text-white font-medium">{selectedPO.poNumber}</p>
                 </div>
                 <div>
                   <p className="text-xs text-white/60 mb-1">Supplier</p>
@@ -359,6 +370,10 @@ const StockManagerDashboard = () => {
                   <p className="text-sm text-white font-medium">{selectedPO.date}</p>
                 </div>
                 <div>
+                  <p className="text-xs text-white/60 mb-1">Expected Delivery</p>
+                  <p className="text-sm text-white font-medium">{selectedPO.expectedDelivery}</p>
+                </div>
+                <div>
                   <p className="text-xs text-white/60 mb-1">Status</p>
                   <Badge variant={
                     selectedPO.status === 'Pending' ? 'warning' :
@@ -366,6 +381,10 @@ const StockManagerDashboard = () => {
                   }>
                     {selectedPO.status}
                   </Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-white/60 mb-1">Created By</p>
+                  <p className="text-sm text-white font-medium">{selectedPO.createdBy}</p>
                 </div>
               </div>
             </div>
@@ -391,12 +410,12 @@ const StockManagerDashboard = () => {
               </div>
             </div>
 
-            {/* Total */}
+            {/* Total and Notes */}
             <div className="glass-card p-6">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-4">
                 <span className="text-lg font-semibold text-white">Total Amount</span>
                 <span className="text-2xl font-bold text-success-400">
-                  ${selectedPO.total.toFixed(2)}
+                  ${selectedPO.totalAmount.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -410,216 +429,16 @@ const StockManagerDashboard = () => {
         )}
       </Modal>
 
-      {/* Reorder Product Modal */}
-      <Modal
+
+      {/* Reorder Product Modal - For RESTOCKING existing products */}
+      <ReorderModal
         isOpen={isReorderModalOpen}
         onClose={() => setIsReorderModalOpen(false)}
-        title="Create Reorder / Purchase Order"
-        size="md"
-      >
-        {selectedProduct && (
-          <form onSubmit={handleReorder} className="space-y-4">
-            <div className="glass-card p-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-white/60 mb-1">Product</p>
-                  <p className="text-sm text-white font-medium">{selectedProduct.name}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-white/60 mb-1">Current Stock</p>
-                  <p className="text-sm font-bold text-danger-400">{selectedProduct.stock}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-white/60 mb-1">Min Stock</p>
-                  <p className="text-sm text-white/80">{selectedProduct.min_stock}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-white/60 mb-1">Category</p>
-                  <p className="text-sm text-white/80">{selectedProduct.category}</p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">Order Quantity *</label>
-              <Input
-                type="number"
-                value={reorderForm.quantity}
-                onChange={(e) => setReorderForm({ ...reorderForm, quantity: e.target.value })}
-                placeholder="Enter quantity to order"
-                min="1"
-                required
-              />
-              <p className="text-xs text-white/60 mt-1">Suggested: {selectedProduct.min_stock} units</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">Supplier *</label>
-              <select
-                className="select w-full"
-                value={reorderForm.supplier}
-                onChange={(e) => setReorderForm({ ...reorderForm, supplier: e.target.value })}
-                required
-              >
-                <option value="">Select Supplier</option>
-                <option value="BeautySupply Co">BeautySupply Co</option>
-                <option value="SkinCare Inc">SkinCare Inc</option>
-                <option value="Global Cosmetics">Global Cosmetics</option>
-                <option value="PureGlow Wholesale">PureGlow Wholesale</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">Expected Delivery *</label>
-              <Input
-                type="date"
-                value={reorderForm.expectedDelivery}
-                onChange={(e) => setReorderForm({ ...reorderForm, expectedDelivery: e.target.value })}
-                min={new Date().toISOString().split('T')[0]}
-                required
-              />
-            </div>
-
-            <div className="flex gap-3 justify-end pt-4">
-              <Button type="button" variant="secondary" onClick={() => setIsReorderModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary">
-                Create Purchase Order
-              </Button>
-            </div>
-          </form>
-        )}
-      </Modal>
-
-      {/* Create New PO Modal */}
-      <Modal
-        isOpen={isCreatePOModalOpen}
-        onClose={() => setIsCreatePOModalOpen(false)}
-        title="Create New Purchase Order"
-        size="lg"
-      >
-        <form onSubmit={handleCreatePO} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">Supplier *</label>
-              <select
-                className="select w-full"
-                value={poForm.supplier}
-                onChange={(e) => setPOForm({ ...poForm, supplier: e.target.value })}
-                required
-              >
-                <option value="">Select Supplier</option>
-                <option value="BeautySupply Co">BeautySupply Co</option>
-                <option value="SkinCare Inc">SkinCare Inc</option>
-                <option value="Global Cosmetics">Global Cosmetics</option>
-                <option value="PureGlow Wholesale">PureGlow Wholesale</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-2">Expected Delivery *</label>
-              <Input
-                type="date"
-                value={poForm.expectedDelivery}
-                onChange={(e) => setPOForm({ ...poForm, expectedDelivery: e.target.value })}
-                min={new Date().toISOString().split('T')[0]}
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <label className="block text-sm font-medium text-white/80">Order Items *</label>
-              <Button type="button" variant="secondary" size="sm" onClick={addPOItem}>
-                <PlusIcon className="w-4 h-4 mr-1" />
-                Add Item
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {poItems.map((item, index) => (
-                <div key={index} className="flex gap-3 items-start">
-                  <Input
-                    type="text"
-                    placeholder="Product name"
-                    value={item.product}
-                    onChange={(e) => updatePOItem(index, 'product', e.target.value)}
-                    required
-                    className="flex-1"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Qty"
-                    value={item.quantity}
-                    onChange={(e) => updatePOItem(index, 'quantity', e.target.value)}
-                    required
-                    min="1"
-                    className="w-24"
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Price"
-                    value={item.unitPrice}
-                    onChange={(e) => updatePOItem(index, 'unitPrice', e.target.value)}
-                    required
-                    min="0"
-                    step="0.01"
-                    className="w-28"
-                  />
-                  {poItems.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="danger"
-                      size="sm"
-                      onClick={() => removePOItem(index)}
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="glass-card p-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-white/80">Estimated Total</span>
-              <span className="text-xl font-bold text-success-400">
-                ${calculatePOTotal().toFixed(2)}
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white/80 mb-2">Notes</label>
-            <textarea
-              className="textarea w-full"
-              rows="3"
-              value={poForm.notes}
-              onChange={(e) => setPOForm({ ...poForm, notes: e.target.value })}
-              placeholder="Add any additional notes..."
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button type="submit" variant="primary" className="flex-1">
-              Create Purchase Order
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setIsCreatePOModalOpen(false);
-                setPOForm({ supplier: '', expectedDelivery: '', notes: '' });
-                setPOItems([{ product: '', quantity: '', unitPrice: '' }]);
-              }}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        product={selectedProduct}
+        formData={reorderForm}
+        onFormChange={setReorderForm}
+        onSubmit={handleReorderSubmit}
+      />
     </div>
   );
 };

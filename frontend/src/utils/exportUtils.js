@@ -1,4 +1,7 @@
 // Utility functions for exporting data
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 /**
  * Export data to CSV format
@@ -9,33 +12,19 @@ export const exportToCSV = (data, filename = 'export.csv') => {
     return;
   }
 
-  // Get headers from first object
-  const headers = Object.keys(data[0]);
+  // Create worksheet from data
+  const ws = XLSX.utils.json_to_sheet(data);
 
-  // Create CSV content
-  const csvContent = [
-    // Header row
-    headers.join(','),
-    // Data rows
-    ...data.map(row =>
-      headers.map(header => {
-        const value = row[header];
-        // Handle values that might contain commas or quotes
-        if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
-          return `"${value.replace(/"/g, '""')}"`;
-        }
-        return value;
-      }).join(',')
-    )
-  ].join('\n');
+  // Create workbook and add worksheet
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data');
 
-  // Create blob and download
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  downloadFile(blob, filename);
+  // Generate CSV and trigger download
+  XLSX.writeFile(wb, filename.endsWith('.csv') ? filename : `${filename}.csv`, { bookType: 'csv' });
 };
 
 /**
- * Export data to Excel format (using HTML table method)
+ * Export data to Excel format
  */
 export const exportToExcel = (data, filename = 'export.xlsx') => {
   if (!data || data.length === 0) {
@@ -43,35 +32,34 @@ export const exportToExcel = (data, filename = 'export.xlsx') => {
     return;
   }
 
-  // Get headers
-  const headers = Object.keys(data[0]);
+  // Create worksheet from data
+  const ws = XLSX.utils.json_to_sheet(data);
 
-  // Create HTML table
-  let tableHTML = '<table><thead><tr>';
-  headers.forEach(header => {
-    tableHTML += `<th>${header}</th>`;
+  // Auto-size columns
+  const cols = [];
+  const keys = Object.keys(data[0]);
+  keys.forEach((key) => {
+    const maxLength = Math.max(
+      key.toString().length,
+      ...data.map(row => {
+        const value = row[key];
+        return value ? value.toString().length : 0;
+      })
+    );
+    cols.push({ wch: Math.min(maxLength + 2, 50) });
   });
-  tableHTML += '</tr></thead><tbody>';
+  ws['!cols'] = cols;
 
-  data.forEach(row => {
-    tableHTML += '<tr>';
-    headers.forEach(header => {
-      tableHTML += `<td>${row[header] || ''}</td>`;
-    });
-    tableHTML += '</tr>';
-  });
-  tableHTML += '</tbody></table>';
+  // Create workbook and add worksheet
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 
-  // Create blob with Excel MIME type
-  const blob = new Blob([tableHTML], {
-    type: 'application/vnd.ms-excel'
-  });
-
-  downloadFile(blob, filename);
+  // Generate Excel file and trigger download
+  XLSX.writeFile(wb, filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`);
 };
 
 /**
- * Export data to PDF format (using jsPDF)
+ * Export data to PDF format (using jsPDF and autotable)
  */
 export const exportToPDF = (data, filename = 'export.pdf', title = 'Export Report') => {
   if (!data || data.length === 0) {
@@ -79,122 +67,51 @@ export const exportToPDF = (data, filename = 'export.pdf', title = 'Export Repor
     return;
   }
 
-  // Simple PDF generation using browser print
-  const printWindow = window.open('', '_blank');
+  // Create new PDF document
+  const doc = new jsPDF();
 
-  // Get headers
+  // Add title
+  doc.setFontSize(18);
+  doc.setFont(undefined, 'bold');
+  doc.text(title, 14, 20);
+
+  // Add metadata
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(100);
+  doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
+  doc.text(`Total Records: ${data.length}`, 14, 34);
+
+  doc.setTextColor(0);
+
+  // Get headers and prepare table data
   const headers = Object.keys(data[0]);
+  const tableData = data.map(row => headers.map(header => {
+    const value = row[header];
+    return value !== null && value !== undefined ? value.toString() : '';
+  }));
 
-  let htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>${title}</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          padding: 20px;
-          color: #333;
-        }
-        h1 {
-          text-align: center;
-          color: #000;
-          margin-bottom: 20px;
-        }
-        .meta {
-          text-align: right;
-          margin-bottom: 20px;
-          color: #666;
-          font-size: 12px;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 20px;
-        }
-        th, td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
-          font-size: 11px;
-        }
-        th {
-          background-color: #000;
-          color: white;
-          font-weight: bold;
-        }
-        tr:nth-child(even) {
-          background-color: #f9f9f9;
-        }
-        .footer {
-          margin-top: 30px;
-          text-align: center;
-          color: #666;
-          font-size: 10px;
-        }
-        @media print {
-          body { margin: 0; }
-        }
-      </style>
-    </head>
-    <body>
-      <h1>${title}</h1>
-      <div class="meta">
-        Generated on: ${new Date().toLocaleString()}<br>
-        Total Records: ${data.length}
-      </div>
-      <table>
-        <thead>
-          <tr>
-            ${headers.map(h => `<th>${h}</th>`).join('')}
-          </tr>
-        </thead>
-        <tbody>
-          ${data.map(row => `
-            <tr>
-              ${headers.map(h => `<td>${row[h] || ''}</td>`).join('')}
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-      <div class="footer">
-        This is an automatically generated report.
-      </div>
-    </body>
-    </html>
-  `;
+  // Add table
+  doc.autoTable({
+    head: [headers],
+    body: tableData,
+    startY: 40,
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+    },
+    headStyles: {
+      fillColor: [0, 0, 0],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+    },
+    alternateRowStyles: {
+      fillColor: [245, 245, 245],
+    },
+  });
 
-  printWindow.document.write(htmlContent);
-  printWindow.document.close();
-
-  // Trigger print dialog after content loads
-  printWindow.onload = function() {
-    printWindow.focus();
-    printWindow.print();
-    // Close window after printing or canceling
-    setTimeout(() => {
-      printWindow.close();
-    }, 100);
-  };
-};
-
-/**
- * Helper function to download a blob as a file
- */
-const downloadFile = (blob, filename) => {
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  link.style.visibility = 'hidden';
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  // Clean up
-  setTimeout(() => URL.revokeObjectURL(url), 100);
+  // Save the PDF
+  doc.save(filename.endsWith('.pdf') ? filename : `${filename}.pdf`);
 };
 
 /**

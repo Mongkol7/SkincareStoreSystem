@@ -1,0 +1,53 @@
+[
+  {
+    "id": 1,
+    "transactionNumber": "TXN-2025-001",
+    "date": "2025-01-01T10:30:00.000Z",
+    "cashier": "Cashier User",
+    "items": [
+      {
+        "productId": 1,
+        "productName": "Vitamin C Serum",
+        "quantity": 2,
+        "price": 25.99,
+        "subtotal": 51.98
+      },
+      {
+        "productId": 3,
+        "productName": "Sunscreen SPF 50",
+        "quantity": 1,
+        "price": 22.00,
+        "subtotal": 22.00
+      }
+    ],
+    "subtotal": 73.98,
+    "tax": 7.40,
+    "discount": 0,
+    "total": 81.38,
+    "paymentMethod": "Cash",
+    "status": "Completed",
+    "createdAt": "2025-01-01T10:30:00.000Z"
+  },
+  {
+    "id": 2,
+    "transactionNumber": "TXN-2025-002",
+    "date": "2025-01-01T11:15:00.000Z",
+    "cashier": "Cashier User",
+    "items": [
+      {
+        "productId": 2,
+        "productName": "Hydrating Cleanser",
+        "quantity": 1,
+        "price": 18.50,
+        "subtotal": 18.50
+      }
+    ],
+    "subtotal": 18.50,
+    "tax": 1.85,
+    "discount": 0,
+    "total": 20.35,
+    "paymentMethod": "Credit Card",
+    "status": "Completed",
+    "createdAt": "2025-01-01T11:15:00.000Z"
+  }
+]

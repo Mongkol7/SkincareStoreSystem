@@ -74,12 +74,12 @@ const SalesPage = () => {
 
   // Mock products data
   const products = [
-    { id: 1, name: 'Hydrating Cleanser', category: 'Cleanser', price: 24.99, stock: 50, image: '🧴' },
-    { id: 2, name: 'Vitamin C Serum', category: 'Serum', price: 45.00, stock: 30, image: '💧' },
-    { id: 3, name: 'Moisturizing Cream', category: 'Cream', price: 32.50, stock: 40, image: '🫙' },
-    { id: 4, name: 'Sunscreen SPF 50', category: 'Sunscreen', price: 28.00, stock: 60, image: '☀️' },
-    { id: 5, name: 'Toner Essence', category: 'Toner', price: 22.00, stock: 35, image: '💦' },
-    { id: 6, name: 'Face Mask Pack', category: 'Mask', price: 15.99, stock: 80, image: '🎭' },
+    { id: 1, name: 'Hydrating Cleanser', category: 'Cleanser', originalPrice: 29.99, sellingPrice: 24.99, discount: 17, stock: 50, image: '🧴' },
+    { id: 2, name: 'Vitamin C Serum', category: 'Serum', originalPrice: 45.00, sellingPrice: 45.00, discount: 0, stock: 30, image: '💧' },
+    { id: 3, name: 'Moisturizing Cream', category: 'Cream', originalPrice: 35.00, sellingPrice: 32.50, discount: 7, stock: 40, image: '🫙' },
+    { id: 4, name: 'Sunscreen SPF 50', category: 'Sunscreen', originalPrice: 28.00, sellingPrice: 28.00, discount: 0, stock: 60, image: '☀️' },
+    { id: 5, name: 'Toner Essence', category: 'Toner', originalPrice: 25.00, sellingPrice: 22.00, discount: 12, stock: 35, image: '💦' },
+    { id: 6, name: 'Face Mask Pack', category: 'Mask', originalPrice: 19.99, sellingPrice: 15.99, discount: 20, stock: 80, image: '🎭' },
   ];
 
   const categories = [
@@ -113,7 +113,7 @@ const SalesPage = () => {
         )
       );
     } else {
-      setCart([...cart, { ...product, quantity: 1, discount: 0 }]);
+      setCart([...cart, { ...product, quantity: 1, price: product.sellingPrice, discount: product.discount }]);
     }
   };
 
@@ -134,13 +134,13 @@ const SalesPage = () => {
   };
 
   const calculateSubtotal = () => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return cart.reduce((sum, item) => sum + item.sellingPrice * item.quantity, 0);
   };
 
   const calculateDiscount = () => {
     return cart.reduce((sum, item) => {
-      const itemTotal = item.price * item.quantity;
-      return sum + (itemTotal * item.discount) / 100;
+      const itemDiscountAmount = (item.price * item.discount) / 100;
+      return sum + (itemDiscountAmount * item.quantity);
     }, 0);
   };
 
@@ -267,11 +267,21 @@ const SalesPage = () => {
                   <span className="text-xs text-white/60">Stock: {product.stock}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold text-white">${product.price}</span>
-                  <Button variant="primary" size="sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-white">${product.sellingPrice.toFixed(2)}</span>
+                    {product.discount > 0 && (
+                      <span className="text-xs text-white/60 line-through">${product.originalPrice.toFixed(2)}</span>
+                    )}
+                  </div>
+                  <Button variant="primary" size="sm" onClick={() => addToCart(product)}>
                     <PlusIcon className="w-4 h-4" />
                   </Button>
                 </div>
+                {product.discount > 0 && (
+                  <div className="absolute top-2 right-2">
+                    <Badge variant="danger">-{product.discount}%</Badge>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -382,7 +392,7 @@ const SalesPage = () => {
                         <h4 className="text-sm font-medium text-white mb-1">
                           {item.name}
                         </h4>
-                        <p className="text-xs text-white/60">${item.price} each</p>
+                        <p className="text-xs text-white/60">${item.price.toFixed(2)} each</p>
                       </div>
                       <button
                         onClick={() => removeFromCart(item.id)}

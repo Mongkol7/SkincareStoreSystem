@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "name": "Admin User",
+    "email": "admin@skincare.com",
+    "password": "$2a$10$rQZ8qNqZ5Y5YZ5YZ5YZ5YeO5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y",
+    "roles": [{ "id": 1, "name": "Admin", "url": "/admin" }],
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "username": "cashier1",
+    "name": "Cashier User",
+    "email": "cashier@skincare.com",
+    "password": "$2a$10$rQZ8qNqZ5Y5YZ5YZ5YZ5YeO5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y",
+    "roles": [{ "id": 2, "name": "Cashier", "url": "/cashier" }],
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "username": "stockmanager",
+    "name": "Stock Manager",
+    "email": "stock@skincare.com",
+    "password": "$2a$10$rQZ8qNqZ5Y5YZ5YZ5YZ5YeO5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y",
+    "roles": [{ "id": 3, "name": "Stock Manager", "url": "/stock-manager" }],
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "username": "hr1",
+    "name": "HR User",
+    "email": "hr@skincare.com",
+    "password": "$2a$10$rQZ8qNqZ5Y5YZ5YZ5YZ5YeO5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y5Y",
+    "roles": [{ "id": 4, "name": "HR", "url": "/hr" }],
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  }
+]

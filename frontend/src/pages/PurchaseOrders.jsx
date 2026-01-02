@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { usePO } from '../context/POContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import Card, { CardHeader } from '../components/common/Card';
@@ -8,111 +9,18 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Select from '../components/common/Select';
 import Modal from '../components/common/Modal';
-import { MagnifyingGlassIcon, PlusIcon, CheckIcon, XMarkIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, PlusIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 const PurchaseOrders = () => {
   const { user } = useAuth();
+  const { openCreatePOModal, purchaseOrders, setPurchaseOrders, updatePurchaseOrder } = usePO();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState(null);
-  const [poItems, setPOItems] = useState([{ product: '', quantity: '', unitPrice: '' }]);
 
-  // Mock purchase order data with detailed items
-  const [purchaseOrders, setPurchaseOrders] = useState([
-    {
-      id: 1,
-      poNumber: 'PO-2025-001',
-      supplier: 'GlowSkin Supplies',
-      date: '2025-12-28',
-      items: 15,
-      totalAmount: 2450.00,
-      status: 'Pending',
-      expectedDelivery: '2025-12-30',
-      itemsList: [
-        { product: 'Moisturizing Cream 50ml', quantity: 10, unitPrice: 180.00 },
-        { product: 'Sunscreen SPF 50 75ml', quantity: 5, unitPrice: 130.00 }
-      ],
-      notes: 'Urgent restock needed',
-      createdBy: 'Admin User',
-      approvedBy: null
-    },
-    {
-      id: 2,
-      poNumber: 'PO-2025-002',
-      supplier: 'PureGlow Wholesale',
-      date: '2025-12-27',
-      items: 22,
-      totalAmount: 3780.50,
-      status: 'Approved',
-      expectedDelivery: '2025-12-29',
-      itemsList: [
-        { product: 'Face Wash 200ml', quantity: 12, unitPrice: 95.00 },
-        { product: 'Night Serum 30ml', quantity: 10, unitPrice: 264.05 }
-      ],
-      notes: '',
-      createdBy: 'Admin User',
-      approvedBy: 'Manager User'
-    },
-    {
-      id: 3,
-      poNumber: 'PO-2025-003',
-      supplier: 'SunShield Distributors',
-      date: '2025-12-26',
-      items: 18,
-      totalAmount: 1995.00,
-      status: 'Delivered',
-      expectedDelivery: '2025-12-28',
-      itemsList: [
-        { product: 'Eye Cream 15ml', quantity: 8, unitPrice: 120.00 },
-        { product: 'Toner 150ml', quantity: 10, unitPrice: 75.50 }
-      ],
-      notes: 'Delivered on time',
-      createdBy: 'Stock Manager',
-      approvedBy: 'Admin User'
-    },
-    {
-      id: 4,
-      poNumber: 'PO-2025-004',
-      supplier: 'HydraPlus Corp',
-      date: '2025-12-25',
-      items: 30,
-      totalAmount: 5240.75,
-      status: 'In Transit',
-      expectedDelivery: '2025-12-31',
-      itemsList: [
-        { product: 'Anti-Aging Cream 50ml', quantity: 15, unitPrice: 285.00 },
-        { product: 'Vitamin C Serum 30ml', quantity: 15, unitPrice: 64.05 }
-      ],
-      notes: 'Large order for year-end stock',
-      createdBy: 'Stock Manager',
-      approvedBy: 'Admin User'
-    },
-    {
-      id: 5,
-      poNumber: 'PO-2025-005',
-      supplier: 'YouthGlow International',
-      date: '2025-12-24',
-      items: 12,
-      totalAmount: 1680.00,
-      status: 'Cancelled',
-      expectedDelivery: '-',
-      itemsList: [
-        { product: 'Cleanser Set', quantity: 12, unitPrice: 140.00 }
-      ],
-      notes: 'Cancelled due to supplier unavailability',
-      createdBy: 'Stock Manager',
-      approvedBy: null
-    },
-  ]);
 
-  const [formData, setFormData] = useState({
-    supplier: '',
-    expectedDelivery: '',
-    notes: ''
-  });
 
   // Filter purchase orders
   const filteredPOs = useMemo(() => {
@@ -132,106 +40,118 @@ const PurchaseOrders = () => {
   };
 
   // Handle approve PO
-  const handleApprovePO = (po) => {
-    setPurchaseOrders(purchaseOrders.map(p =>
-      p.id === po.id
-        ? { ...p, status: 'Approved', approvedBy: user?.username || 'Current User' }
-        : p
-    ));
-  };
-
-  // Handle cancel PO
-  const handleCancelPO = (po) => {
-    if (window.confirm('Are you sure you want to cancel this purchase order?')) {
-      setPurchaseOrders(purchaseOrders.map(p =>
-        p.id === po.id ? { ...p, status: 'Cancelled' } : p
-      ));
+  const handleApprovePO = async (po) => {
+    if (window.confirm(`Approve Purchase Order ${po.poNumber}?\n\nThis will authorize the order for ${po.supplier} with total amount of $${po.totalAmount.toFixed(2)}.`)) {
+      try {
+        const updatedPO = await updatePurchaseOrder(po.id, {
+          status: 'Approved',
+          approvedBy: user?.username || 'Current User'
+        });
+        // Update modal if open
+        if (selectedPO?.id === po.id) {
+          setSelectedPO(updatedPO);
+        }
+        alert(`✓ Purchase Order ${po.poNumber} has been approved!`);
+      } catch (error) {
+        alert('Failed to approve purchase order. Please try again.');
+      }
     }
   };
 
-  // Handle create PO
-  const handleCreatePO = (e) => {
-    e.preventDefault();
-    const totalItems = poItems.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0);
-    const totalAmount = poItems.reduce((sum, item) =>
-      sum + (parseFloat(item.quantity || 0) * parseFloat(item.unitPrice || 0)), 0);
-
-    const newPO = {
-      id: purchaseOrders.length + 1,
-      poNumber: `PO-2025-${String(purchaseOrders.length + 1).padStart(3, '0')}`,
-      supplier: formData.supplier,
-      date: new Date().toISOString().split('T')[0],
-      items: totalItems,
-      totalAmount: totalAmount,
-      status: 'Pending',
-      expectedDelivery: formData.expectedDelivery,
-      itemsList: poItems.map(item => ({
-        product: item.product,
-        quantity: parseInt(item.quantity),
-        unitPrice: parseFloat(item.unitPrice)
-      })),
-      notes: formData.notes,
-      createdBy: user?.username || 'Current User',
-      approvedBy: null
-    };
-
-    setPurchaseOrders([newPO, ...purchaseOrders]);
-    setIsCreateModalOpen(false);
-    resetForm();
+  // Handle cancel PO
+  const handleCancelPO = async (po) => {
+    if (window.confirm(`Cancel Purchase Order ${po.poNumber}?\n\nThis action cannot be undone.`)) {
+      try {
+        await updatePurchaseOrder(po.id, { status: 'Cancelled' });
+        // Close modal if open
+        if (selectedPO?.id === po.id) {
+          setIsViewModalOpen(false);
+          setSelectedPO(null);
+        }
+        alert(`✓ Purchase Order ${po.poNumber} has been cancelled.`);
+      } catch (error) {
+        alert('Failed to cancel purchase order. Please try again.');
+      }
+    }
   };
 
-  // Reset form
-  const resetForm = () => {
-    setFormData({ supplier: '', expectedDelivery: '', notes: '' });
-    setPOItems([{ product: '', quantity: '', unitPrice: '' }]);
-  };
-
-  // Add item to PO
-  const addPOItem = () => {
-    setPOItems([...poItems, { product: '', quantity: '', unitPrice: '' }]);
-  };
-
-  // Remove item from PO
-  const removePOItem = (index) => {
-    setPOItems(poItems.filter((_, i) => i !== index));
-  };
-
-  // Update item
-  const updatePOItem = (index, field, value) => {
-    const newItems = [...poItems];
-    newItems[index][field] = value;
-    setPOItems(newItems);
+  // Handle mark as received
+  const handleMarkAsReceived = async (po) => {
+    if (window.confirm(`Mark Purchase Order ${po.poNumber} as Received?\n\nThis confirms that all items have been received and added to inventory.`)) {
+      try {
+        const updatedPO = await updatePurchaseOrder(po.id, { status: 'Received' });
+        // Update modal if open
+        if (selectedPO?.id === po.id) {
+          setSelectedPO(updatedPO);
+        }
+        alert(`✓ Purchase Order ${po.poNumber} has been marked as received!`);
+      } catch (error) {
+        alert('Failed to mark purchase order as received. Please try again.');
+      }
+    }
   };
 
   const columns = [
     {
       field: 'actions',
       label: 'Actions',
-      render: (_, row) => (
-        <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => handleViewPO(row)}>
-            View
-          </Button>
-          {row.status === 'Pending' && (
-            <>
-              <Button variant="primary" size="sm" onClick={() => handleApprovePO(row)}>
-                <CheckIcon className="w-4 h-4" />
-              </Button>
-              <Button variant="danger" size="sm" onClick={() => handleCancelPO(row)}>
-                <XMarkIcon className="w-4 h-4" />
-              </Button>
-            </>
+      render: (_, row) => {
+        const isAdmin = user?.roles?.some(role => role.name === 'Admin');
+
+        return (
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" onClick={() => handleViewPO(row)} title="View Details">
+              View
+            </Button>
+            {/* Only Admin can approve/reject pending POs */}
+            {isAdmin && row.status === 'Pending' && (
+              <>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleApprovePO(row)}
+                  title="Approve Purchase Order"
+                >
+                  <CheckIcon className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleCancelPO(row)}
+                  title="Reject Purchase Order"
+                >
+                  <XMarkIcon className="w-4 h-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        );
+      },
+    },
+    { field: 'poNumber', label: 'PO Number' },
+    { field: 'supplier', label: 'Supplier' },
+    {
+      field: 'itemsList',
+      label: 'Products',
+      render: (itemsList) => (
+        <div className="text-white/80 text-sm">
+          {itemsList && itemsList.length > 0 ? (
+            itemsList.length === 1 ? (
+              <span>{itemsList[0].product}</span>
+            ) : (
+              <span>{itemsList[0].product} +{itemsList.length - 1} more</span>
+            )
+          ) : (
+            <span>-</span>
           )}
         </div>
       ),
     },
-    { field: 'poNumber', label: 'PO Number' },
-    { field: 'supplier', label: 'Supplier' },
     { field: 'date', label: 'Order Date' },
     {
       field: 'items',
-      label: 'Items',
-      render: (value) => <span className="text-white/80">{value} items</span>
+      label: 'Qty',
+      render: (value) => <span className="text-white/80">{value}</span>
     },
     {
       field: 'totalAmount',
@@ -248,7 +168,7 @@ const PurchaseOrders = () => {
       label: 'Status',
       render: (value) => (
         <span className={`badge ${
-          value === 'Delivered' ? 'badge-success' :
+          value === 'Received' ? 'badge-success' :
           value === 'Approved' || value === 'In Transit' ? 'badge-primary' :
           value === 'Pending' ? 'badge-warning' :
           'badge-danger'
@@ -256,6 +176,26 @@ const PurchaseOrders = () => {
           {value}
         </span>
       ),
+    },
+    {
+      field: 'markReceived',
+      label: 'Receive',
+      render: (_, row) => {
+        // Show Mark as Received button only for Approved POs
+        if (row.status === 'Approved') {
+          return (
+            <Button
+              variant="success"
+              size="sm"
+              onClick={() => handleMarkAsReceived(row)}
+              title="Mark as Received"
+            >
+              Mark Received
+            </Button>
+          );
+        }
+        return <span className="text-white/40 text-sm">-</span>;
+      },
     },
   ];
 
@@ -268,15 +208,15 @@ const PurchaseOrders = () => {
 
   return (
     <>
-    <div className="min-h-screen">
-      <div className="flex gap-0">
-        <Sidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-          userRole={user?.roles?.[0]?.name}
-        />
+      <div className="min-h-screen">
+        <div className="flex gap-0">
+          <Sidebar
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+            userRole={user?.roles?.[0]?.name}
+          />
 
-        <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
+          <div className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
             <Navbar user={user} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
 
             <div className="mb-6">
@@ -337,7 +277,7 @@ const PurchaseOrders = () => {
                         className="pl-10 w-64"
                       />
                     </div>
-                    <Button variant="primary" size="sm" onClick={() => setIsCreateModalOpen(true)}>
+                    <Button variant="primary" size="sm" onClick={() => openCreatePOModal()}>
                       <PlusIcon className="w-4 h-4 mr-2" />
                       Create PO
                     </Button>
@@ -349,112 +289,6 @@ const PurchaseOrders = () => {
           </div>
         </div>
       </div>
-
-      {/* Create PO Modal */}
-      <Modal
-        isOpen={isCreateModalOpen}
-        onClose={() => { setIsCreateModalOpen(false); resetForm(); }}
-        title="Create New Purchase Order"
-        size="lg"
-      >
-        <form onSubmit={handleCreatePO} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-white/60 mb-2">Supplier *</label>
-              <Input
-                required
-                value={formData.supplier}
-                onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                placeholder="Enter supplier name"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-white/60 mb-2">Expected Delivery *</label>
-              <Input
-                type="date"
-                required
-                value={formData.expectedDelivery}
-                onChange={(e) => setFormData({ ...formData, expectedDelivery: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center mb-3">
-              <label className="block text-sm text-white/60">Order Items *</label>
-              <Button type="button" variant="secondary" size="sm" onClick={addPOItem}>
-                <PlusIcon className="w-4 h-4 mr-1" />
-                Add Item
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {poItems.map((item, index) => (
-                <div key={index} className="flex gap-3 items-start">
-                  <Input
-                    required
-                    placeholder="Product name"
-                    value={item.product}
-                    onChange={(e) => updatePOItem(index, 'product', e.target.value)}
-                    className="flex-1"
-                  />
-                  <Input
-                    required
-                    type="number"
-                    placeholder="Qty"
-                    value={item.quantity}
-                    onChange={(e) => updatePOItem(index, 'quantity', e.target.value)}
-                    className="w-24"
-                  />
-                  <Input
-                    required
-                    type="number"
-                    step="0.01"
-                    placeholder="Unit Price"
-                    value={item.unitPrice}
-                    onChange={(e) => updatePOItem(index, 'unitPrice', e.target.value)}
-                    className="w-32"
-                  />
-                  {poItems.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="danger"
-                      size="sm"
-                      onClick={() => removePOItem(index)}
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm text-white/60 mb-2">Notes</label>
-            <textarea
-              className="textarea w-full"
-              rows="3"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Add any additional notes..."
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button type="submit" variant="primary" className="flex-1">
-              Create Purchase Order
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => { setIsCreateModalOpen(false); resetForm(); }}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </Modal>
 
       {/* View PO Modal */}
       <Modal
@@ -536,15 +370,13 @@ const PurchaseOrders = () => {
             )}
 
             <div className="flex gap-3 pt-4">
-              {selectedPO.status === 'Pending' && (
+              {/* Only Admin can approve/reject pending POs */}
+              {user?.roles?.some(role => role.name === 'Admin') && selectedPO.status === 'Pending' && (
                 <>
                   <Button
                     variant="primary"
                     className="flex-1"
-                    onClick={() => {
-                      handleApprovePO(selectedPO);
-                      setIsViewModalOpen(false);
-                    }}
+                    onClick={() => handleApprovePO(selectedPO)}
                   >
                     <CheckIcon className="w-5 h-5 mr-2" />
                     Approve PO
@@ -552,19 +384,27 @@ const PurchaseOrders = () => {
                   <Button
                     variant="danger"
                     className="flex-1"
-                    onClick={() => {
-                      handleCancelPO(selectedPO);
-                      setIsViewModalOpen(false);
-                    }}
+                    onClick={() => handleCancelPO(selectedPO)}
                   >
                     <XMarkIcon className="w-5 h-5 mr-2" />
-                    Cancel PO
+                    Reject PO
                   </Button>
                 </>
               )}
+              {/* Stock Manager can mark approved POs as received */}
+              {selectedPO.status === 'Approved' && (
+                <Button
+                  variant="success"
+                  className="flex-1"
+                  onClick={() => handleMarkAsReceived(selectedPO)}
+                >
+                  <CheckIcon className="w-5 h-5 mr-2" />
+                  Mark as Received
+                </Button>
+              )}
               <Button
                 variant="secondary"
-                className="flex-1"
+                className={selectedPO.status === 'Pending' || selectedPO.status === 'Approved' ? '' : 'flex-1'}
                 onClick={() => setIsViewModalOpen(false)}
               >
                 Close

@@ -8,16 +8,21 @@ import {
   ChartBarIcon,
   Cog6ToothIcon,
   XMarkIcon,
+  ClipboardDocumentListIcon,
 } from '@heroicons/react/24/outline';
 
 const Sidebar = ({ isOpen, onClose, userRole }) => {
   const getMenuItems = () => {
+    // Get role prefix for URLs
+    const rolePrefix =
+      userRole === 'HR' ? '/hr' :
+      userRole === 'Cashier' ? '/cashier' :
+      userRole === 'Stock Manager' ? '/stock-manager' :
+      userRole === 'Admin' ? '/admin' :
+      '';
+
     // Dashboard path varies by role
-    const dashboardPath =
-      userRole === 'HR' ? '/hr/dashboard' :
-      userRole === 'Cashier' ? '/cashier/dashboard' :
-      userRole === 'Stock Manager' ? '/stock-manager/dashboard' :
-      '/dashboard';
+    const dashboardPath = `${rolePrefix}/dashboard`;
 
     const baseItems = [
       { to: dashboardPath, icon: HomeIcon, label: 'Dashboard' },
@@ -25,20 +30,21 @@ const Sidebar = ({ isOpen, onClose, userRole }) => {
 
     const roleMenus = {
       Admin: [
-        { to: '/transactions', icon: ShoppingCartIcon, label: 'Transactions' },
-        { to: '/products', icon: CubeIcon, label: 'Products' },
-        { to: '/staff', icon: UsersIcon, label: 'Staff Management' },
-        { to: '/reports', icon: ChartBarIcon, label: 'Reports' },
-        { to: '/settings', icon: Cog6ToothIcon, label: 'Settings' },
+        { to: `${rolePrefix}/transactions`, icon: ShoppingCartIcon, label: 'Transactions' },
+        { to: `${rolePrefix}/products`, icon: CubeIcon, label: 'Products' },
+        { to: `${rolePrefix}/purchase-orders`, icon: ClipboardDocumentListIcon, label: 'Purchase Orders' },
+        { to: `${rolePrefix}/staff`, icon: UsersIcon, label: 'Staff Management' },
+        { to: `${rolePrefix}/reports`, icon: ChartBarIcon, label: 'Reports' },
+        { to: `${rolePrefix}/settings`, icon: Cog6ToothIcon, label: 'Settings' },
       ],
       Cashier: [
-        { to: '/sales', icon: ShoppingCartIcon, label: 'Sales' },
-        { to: '/batches', icon: ChartBarIcon, label: 'My Batches' },
+        { to: `${rolePrefix}/sales`, icon: ShoppingCartIcon, label: 'Sales' },
+        { to: `${rolePrefix}/batches`, icon: ChartBarIcon, label: 'My Batches' },
       ],
       'Stock Manager': [
-        { to: '/products', icon: CubeIcon, label: 'Products' },
-        { to: '/purchase-orders', icon: ShoppingCartIcon, label: 'Purchase Orders' },
-        { to: '/inventory', icon: ChartBarIcon, label: 'Inventory' },
+        { to: `${rolePrefix}/products`, icon: CubeIcon, label: 'Products' },
+        { to: `${rolePrefix}/purchase-orders`, icon: ClipboardDocumentListIcon, label: 'Purchase Orders' },
+        { to: `${rolePrefix}/inventory`, icon: ChartBarIcon, label: 'Inventory' },
       ],
       HR: [
         // HR role doesn't need additional menu items since Dashboard has tabs

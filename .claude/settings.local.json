@@ -17,7 +17,13 @@
       "Bash(for file in HRDashboard.jsx Inventory.jsx Settings.jsx Staff.jsx Users.jsx Reports.jsx)",
       "Bash(do echo \"=== $file ===\" tail -10 \"$file\")",
       "Bash(cat:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(dir:*)",
+      "Bash(echo:*)",
+      "Bash(timeout 10 npm start:*)",
+      "Bash(exit 0)",
+      "Bash(npm init:*)",
+      "Bash(curl:*)"
     ]
   }
 }

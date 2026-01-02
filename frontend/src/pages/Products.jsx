@@ -29,7 +29,10 @@ const Products = () => {
       name: 'Vitamin C Serum',
       category: 'Serum',
       brand: 'GlowSkin',
-      price: 45.99,
+      originalPrice: 45.99,
+      sellingPrice: 39.99,
+      discount: 13,
+      price: 45.99, // Keep for backward compatibility
       stock: 5,
       min_stock: 10,
       status: 'Low Stock'
@@ -40,6 +43,9 @@ const Products = () => {
       name: 'Hydrating Cleanser',
       category: 'Cleanser',
       brand: 'PureGlow',
+      originalPrice: 32.99,
+      sellingPrice: 29.99,
+      discount: 9,
       price: 29.99,
       stock: 3,
       min_stock: 15,
@@ -51,6 +57,9 @@ const Products = () => {
       name: 'Sunscreen SPF 50',
       category: 'Sunscreen',
       brand: 'SunShield',
+      originalPrice: 35.00,
+      sellingPrice: 35.00,
+      discount: 0,
       price: 35.00,
       stock: 25,
       min_stock: 20,
@@ -62,6 +71,9 @@ const Products = () => {
       name: 'Hyaluronic Acid Moisturizer',
       category: 'Moisturizer',
       brand: 'HydraPlus',
+      originalPrice: 59.99,
+      sellingPrice: 52.50,
+      discount: 12,
       price: 52.50,
       stock: 18,
       min_stock: 10,
@@ -73,6 +85,9 @@ const Products = () => {
       name: 'Retinol Night Cream',
       category: 'Night Cream',
       brand: 'YouthGlow',
+      originalPrice: 78.00,
+      sellingPrice: 68.00,
+      discount: 13,
       price: 68.00,
       stock: 12,
       min_stock: 8,
@@ -84,6 +99,9 @@ const Products = () => {
       name: 'Gentle Exfoliating Scrub',
       category: 'Exfoliator',
       brand: 'SmoothSkin',
+      originalPrice: 27.99,
+      sellingPrice: 24.99,
+      discount: 11,
       price: 24.99,
       stock: 0,
       min_stock: 12,
@@ -97,12 +115,35 @@ const Products = () => {
     name: '',
     category: '',
     brand: '',
-    price: '',
+    originalPrice: '',
+    sellingPrice: '',
+    discount: 0,
+    price: '', // Keep for backward compatibility
     stock: '',
     min_stock: '',
   });
 
   const [restockQuantity, setRestockQuantity] = useState('');
+
+  // Calculate discount percentage
+  const calculateDiscount = (original, selling) => {
+    if (!original || !selling || original <= 0) return 0;
+    const discount = ((parseFloat(original) - parseFloat(selling)) / parseFloat(original)) * 100;
+    return Math.round(discount);
+  };
+
+  // Handle price changes with auto-discount calculation
+  const handlePriceChange = (field, value) => {
+    const newFormData = { ...formData, [field]: value };
+
+    if (field === 'originalPrice' || field === 'sellingPrice') {
+      const original = field === 'originalPrice' ? value : formData.originalPrice;
+      const selling = field === 'sellingPrice' ? value : formData.sellingPrice;
+      newFormData.discount = calculateDiscount(original, selling);
+    }
+
+    setFormData(newFormData);
+  };
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -130,7 +171,10 @@ const Products = () => {
     const newProduct = {
       id: products.length + 1,
       ...formData,
-      price: parseFloat(formData.price),
+      originalPrice: parseFloat(formData.originalPrice),
+      sellingPrice: parseFloat(formData.sellingPrice),
+      discount: formData.discount,
+      price: parseFloat(formData.sellingPrice), // Use selling price as default price
       stock: parseInt(formData.stock),
       min_stock: parseInt(formData.min_stock),
       status: parseInt(formData.stock) === 0 ? 'Out of Stock' :
@@ -150,7 +194,10 @@ const Products = () => {
         ? {
             ...p,
             ...formData,
-            price: parseFloat(formData.price),
+            originalPrice: parseFloat(formData.originalPrice),
+            sellingPrice: parseFloat(formData.sellingPrice),
+            discount: formData.discount,
+            price: parseFloat(formData.sellingPrice), // Use selling price as default price
             stock: parseInt(formData.stock),
             min_stock: parseInt(formData.min_stock),
             status: parseInt(formData.stock) === 0 ? 'Out of Stock' :
@@ -188,6 +235,9 @@ const Products = () => {
       name: product.name,
       category: product.category,
       brand: product.brand,
+      originalPrice: (product.originalPrice || product.price).toString(),
+      sellingPrice: (product.sellingPrice || product.price).toString(),
+      discount: product.discount || 0,
       price: product.price.toString(),
       stock: product.stock.toString(),
       min_stock: product.min_stock.toString(),
@@ -209,6 +259,9 @@ const Products = () => {
       name: '',
       category: '',
       brand: '',
+      originalPrice: '',
+      sellingPrice: '',
+      discount: 0,
       price: '',
       stock: '',
       min_stock: '',
@@ -450,15 +503,32 @@ const Products = () => {
               />
             </div>
             <div>
-              <label className="block text-sm text-white/70 mb-2">Price ($)</label>
+              <label className="block text-sm text-white/70 mb-2">Original Price ($)</label>
               <Input
                 required
                 type="number"
                 step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
+                value={formData.originalPrice}
+                onChange={(e) => handlePriceChange('originalPrice', e.target.value)}
                 placeholder="0.00"
               />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Selling Price ($)</label>
+              <Input
+                required
+                type="number"
+                step="0.01"
+                value={formData.sellingPrice}
+                onChange={(e) => handlePriceChange('sellingPrice', e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Discount (%)</label>
+              <div className="glass-card p-3 bg-success-500/10">
+                <p className="text-xl font-bold text-success-400">{formData.discount}% OFF</p>
+              </div>
             </div>
             <div>
               <label className="block text-sm text-white/70 mb-2">Current Stock</label>
@@ -534,14 +604,32 @@ const Products = () => {
               />
             </div>
             <div>
-              <label className="block text-sm text-white/70 mb-2">Price ($)</label>
+              <label className="block text-sm text-white/70 mb-2">Original Price ($)</label>
               <Input
                 required
                 type="number"
                 step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
+                value={formData.originalPrice}
+                onChange={(e) => handlePriceChange('originalPrice', e.target.value)}
+                placeholder="0.00"
               />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Selling Price ($)</label>
+              <Input
+                required
+                type="number"
+                step="0.01"
+                value={formData.sellingPrice}
+                onChange={(e) => handlePriceChange('sellingPrice', e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Discount (%)</label>
+              <div className="glass-card p-3 bg-success-500/10">
+                <p className="text-xl font-bold text-success-400">{formData.discount}% OFF</p>
+              </div>
             </div>
             <div>
               <label className="block text-sm text-white/70 mb-2">Current Stock</label>

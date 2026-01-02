@@ -2,11 +2,9 @@
 
 # dependencies
 /frontend/node_modules
+/backend/node_modules
 /frontend/.pnp
 .pnp.js
-
-# testing
-/frontend/coverage
 
 # production
 /frontend/build
@@ -21,3 +19,4 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+backend/package-lock.json

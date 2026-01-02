@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useStoreSettings } from '../context/StoreSettingsContext';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { LockClosedIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const Login = () => {
   const { login } = useAuth();
@@ -107,34 +110,34 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await authService.login(formData);
+      // Call backend API
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        email: formData.email,
+        password: formData.password
+      });
 
-      // Strict case-sensitive login validation
-      setTimeout(() => {
-        // Check if email exists (case-sensitive)
-        const userCredentials = validUsers[formData.email];
-
-        if (!userCredentials) {
-          setApiError('Invalid email or password. Please check your credentials.');
-          setLoading(false);
-          return;
-        }
-
-        // Check if password matches exactly (case-sensitive)
-        if (userCredentials.password !== formData.password) {
-          setApiError('Invalid email or password. Please check your credentials.');
-          setLoading(false);
-          return;
-        }
-
-        // Login successful
-        const mockToken = 'mock-jwt-token-' + Date.now();
-        login(userCredentials.user, mockToken);
-        setLoading(false);
-      }, 1000);
+      // Login successful - response contains { token, user }
+      login(response.data.user, response.data.token);
+      setLoading(false);
     } catch (error) {
-      setApiError(error.response?.data?.message || 'Login failed. Please try again.');
+      console.error('Login error:', error);
+
+      // If backend is not available, fall back to mock login
+      if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+        console.warn('Backend not available, using mock login');
+
+        // Fallback to mock validation
+        const userCredentials = validUsers[formData.email];
+        if (!userCredentials || userCredentials.password !== formData.password) {
+          setApiError('Invalid email or password. Please check your credentials.');
+        } else {
+          const mockToken = 'mock-jwt-token-' + Date.now();
+          login(userCredentials.user, mockToken);
+        }
+      } else {
+        setApiError(error.response?.data?.message || 'Login failed. Please try again.');
+      }
+
       setLoading(false);
     }
   };

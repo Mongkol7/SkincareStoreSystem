@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { usePO } from '../context/POContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import StatsCard from '../components/common/StatsCard';
@@ -16,12 +17,37 @@ import {
   ChartBarIcon,
   DocumentArrowDownIcon,
   ArrowTrendingUpIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
+import {
+  exportToCSV,
+  exportToExcel,
+  formatDailySalesForExport,
+  formatMonthlySalesForExport,
+  formatCategoryDataForExport,
+} from '../utils/exportUtils';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const { openCreatePOModal, purchaseOrders } = usePO();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('last7days');
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Mock data
   const stats = {
@@ -96,6 +122,26 @@ const AdminDashboard = () => {
     { field: 'time', label: 'Time' },
   ];
 
+  // Check if a product has pending orders
+  const getProductOrderStatus = (productName) => {
+    const pendingOrders = purchaseOrders.filter(po =>
+      (po.status === 'Pending' || po.status === 'Approved') &&
+      po.itemsList?.some(item => item.product === productName)
+    );
+
+    if (pendingOrders.length > 0) {
+      const nearestPO = pendingOrders.sort((a, b) =>
+        new Date(a.expectedDelivery) - new Date(b.expectedDelivery)
+      )[0];
+      return {
+        isOrdered: true,
+        expectedDate: nearestPO.expectedDelivery,
+        status: nearestPO.status
+      };
+    }
+    return { isOrdered: false };
+  };
+
   const productColumns = [
     { field: 'name', label: 'Product' },
     { field: 'category', label: 'Category' },
@@ -103,12 +149,205 @@ const AdminDashboard = () => {
       field: 'stock',
       label: 'Stock',
       render: (value, row) => (
-        <span className="text-danger-400 font-semibold">
-          {value} / {row.min_stock}
-        </span>
+        <div className="flex flex-col gap-1">
+          <span className="text-danger-400 font-semibold">
+            {value} / {row.min_stock}
+          </span>
+          {(() => {
+            const orderStatus = getProductOrderStatus(row.name);
+            return orderStatus.isOrdered ? (
+              <span className={`text-xs px-2 py-0.5 rounded-full inline-block w-fit ${
+                orderStatus.status === 'Pending'
+                  ? 'bg-warning-500/20 text-warning-400'
+                  : 'bg-primary-500/20 text-primary-400'
+              }`}>
+                {orderStatus.status === 'Pending' ? '⏳ Pending' : '✓ Ordered'} - ETA: {orderStatus.expectedDate}
+              </span>
+            ) : null;
+          })()}
+        </div>
       ),
     },
   ];
+
+  const handleCreatePOFromLowStock = () => {
+    const items = lowStockProducts.map(item => ({
+      product: item.name,
+      quantity: item.min_stock - item.stock,
+      unitPrice: ''
+    }));
+    openCreatePOModal(items);
+  };
+
+  // Export handlers
+  const handleExport = (format) => {
+    const periodLabel = selectedPeriod === 'last7days' ? 'Last 7 Days' :
+                       selectedPeriod === 'last30days' ? 'Last 30 Days' :
+                       selectedPeriod === 'last6months' ? 'Last 6 Months' :
+                       'Last Year';
+
+    // Prepare all data for export
+    const dailySalesExport = formatDailySalesForExport(dailySalesData);
+    const monthlySalesExport = formatMonthlySalesForExport(monthlySalesData);
+    const categoryExport = formatCategoryDataForExport(categoryData);
+
+    const timestamp = new Date().toISOString().split('T')[0];
+
+    if (format === 'csv') {
+      // Export each section as separate CSV
+      exportToCSV(dailySalesExport, `Daily_Sales_${timestamp}.csv`);
+      exportToCSV(monthlySalesExport, `Monthly_Sales_${timestamp}.csv`);
+      exportToCSV(categoryExport, `Category_Sales_${timestamp}.csv`);
+    } else if (format === 'excel') {
+      // For Excel, we can create a workbook with multiple sheets
+      // Using the simple method - export each as separate file
+      exportToExcel(dailySalesExport, `Daily_Sales_${timestamp}.xlsx`);
+      exportToExcel(monthlySalesExport, `Monthly_Sales_${timestamp}.xlsx`);
+      exportToExcel(categoryExport, `Category_Sales_${timestamp}.xlsx`);
+    } else if (format === 'pdf') {
+      // Export comprehensive PDF report
+      exportAnalyticsToPDF(periodLabel, timestamp);
+    }
+
+    setShowExportMenu(false);
+  };
+
+  const exportAnalyticsToPDF = (periodLabel, timestamp) => {
+    const { jsPDF } = require('jspdf');
+    require('jspdf-autotable');
+
+    const doc = new jsPDF();
+    let yPosition = 20;
+
+    // Title
+    doc.setFontSize(20);
+    doc.setFont(undefined, 'bold');
+    doc.text('Sales Analytics Report', 14, yPosition);
+    yPosition += 10;
+
+    // Metadata
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, yPosition);
+    doc.text(`Period: ${periodLabel}`, 14, yPosition + 5);
+    yPosition += 15;
+
+    doc.setTextColor(0);
+
+    // Daily Sales Section
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Daily Sales Trend', 14, yPosition);
+    yPosition += 8;
+
+    doc.autoTable({
+      head: [['Day', 'Sales ($)', 'Transactions']],
+      body: dailySalesData.map(d => [
+        d.day,
+        d.sales.toLocaleString(),
+        d.transactions
+      ]),
+      startY: yPosition,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: {
+        fillColor: [0, 0, 0],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+      },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 15;
+
+    // Monthly Sales Section
+    if (yPosition > 240) {
+      doc.addPage();
+      yPosition = 20;
+    }
+
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Monthly Sales vs Target', 14, yPosition);
+    yPosition += 8;
+
+    doc.autoTable({
+      head: [['Month', 'Actual Sales ($)', 'Target ($)', 'Achievement (%)']],
+      body: monthlySalesData.map(d => [
+        d.month,
+        d.sales.toLocaleString(),
+        d.target.toLocaleString(),
+        ((d.sales / d.target) * 100).toFixed(1) + '%'
+      ]),
+      startY: yPosition,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: {
+        fillColor: [0, 0, 0],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+      },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 15;
+
+    // Category Sales Section
+    if (yPosition > 240) {
+      doc.addPage();
+      yPosition = 20;
+    }
+
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Sales by Category', 14, yPosition);
+    yPosition += 8;
+
+    doc.autoTable({
+      head: [['Category', 'Sales ($)', 'Percentage (%)']],
+      body: categoryData.map(d => [
+        d.category,
+        d.sales.toLocaleString(),
+        d.percentage + '%'
+      ]),
+      startY: yPosition,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: {
+        fillColor: [0, 0, 0],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+      },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    yPosition = doc.lastAutoTable.finalY + 15;
+
+    // Summary Section
+    if (yPosition > 240) {
+      doc.addPage();
+      yPosition = 20;
+    }
+
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('Summary', 14, yPosition);
+    yPosition += 8;
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+
+    const avgDailySales = (dailySalesData.reduce((sum, d) => sum + d.sales, 0) / dailySalesData.length / 1000).toFixed(1);
+    const bestDay = dailySalesData.reduce((max, d) => d.sales > max.sales ? d : max, dailySalesData[0]);
+    const targetAchievement = ((monthlySalesData.reduce((sum, d) => sum + d.sales, 0) / monthlySalesData.reduce((sum, d) => sum + d.target, 0)) * 100).toFixed(0);
+
+    doc.text(`Average Daily Sales: $${avgDailySales}k`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Best Selling Day: ${bestDay.day} ($${bestDay.sales.toLocaleString()})`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Target Achievement: ${targetAchievement}%`, 14, yPosition);
+
+    // Save the PDF
+    doc.save(`Sales_Analytics_Report_${timestamp}.pdf`);
+  };
 
   const tabContent = [
     {
@@ -129,7 +368,7 @@ const AdminDashboard = () => {
           <CardHeader
             title="Low Stock Products"
             action={
-              <Button variant="warning" size="sm">
+              <Button variant="warning" size="sm" onClick={handleCreatePOFromLowStock}>
                 Create PO
               </Button>
             }
@@ -164,10 +403,48 @@ const AdminDashboard = () => {
               title="Daily Sales Trend"
               subtitle="Last 7 days performance"
               action={
-                <Button variant="secondary" size="sm">
-                  <DocumentArrowDownIcon className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
+                <div className="relative" ref={exportMenuRef}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowExportMenu(!showExportMenu)}
+                  >
+                    <DocumentArrowDownIcon className="w-4 h-4 mr-2" />
+                    Export
+                    <ChevronDownIcon className="w-4 h-4 ml-2" />
+                  </Button>
+
+                  {showExportMenu && (
+                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                      <div className="py-1" role="menu" aria-orientation="vertical">
+                        <button
+                          onClick={() => handleExport('csv')}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center"
+                          role="menuitem"
+                        >
+                          <DocumentArrowDownIcon className="w-4 h-4 mr-3" />
+                          Export to CSV
+                        </button>
+                        <button
+                          onClick={() => handleExport('excel')}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center"
+                          role="menuitem"
+                        >
+                          <DocumentArrowDownIcon className="w-4 h-4 mr-3" />
+                          Export to Excel
+                        </button>
+                        <button
+                          onClick={() => handleExport('pdf')}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center"
+                          role="menuitem"
+                        >
+                          <DocumentArrowDownIcon className="w-4 h-4 mr-3" />
+                          Export to PDF
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               }
             />
             <div className="p-6">
