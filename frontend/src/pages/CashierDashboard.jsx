@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
@@ -14,6 +14,7 @@ import {
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 const CashierDashboard = () => {
   const { user } = useAuth();
@@ -21,99 +22,67 @@ const CashierDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - replace with actual API calls
+  // Load transactions from backend
+  useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  const loadTransactions = async () => {
+    try {
+      const response = await api.get('/transactions');
+      setTransactions(response.data);
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate stats from real transactions
+  const today = new Date().toISOString().split('T')[0];
+  const todayTransactions = transactions.filter(t =>
+    t.date?.startsWith(today) && t.status === 'Completed'
+  );
+
+  const todayStats = {
+    sales: todayTransactions.reduce((sum, t) => sum + (t.total || 0), 0),
+    transactions: todayTransactions.length,
+    avgTransaction: todayTransactions.length > 0
+      ? todayTransactions.reduce((sum, t) => sum + (t.total || 0), 0) / todayTransactions.length
+      : 0,
+  };
+
+  // Mock batch data (will be replaced when batch system is implemented)
   const currentBatch = {
     batch_id: 1,
     batch_code: 'BTH-20231228-001',
     status: 'Open',
     opening_cash: 500.00,
-    total_sales: 2450.50,
-    transaction_count: 15,
+    total_sales: todayStats.sales,
+    transaction_count: todayStats.transactions,
   };
 
-  const todayStats = {
-    sales: 2450.50,
-    transactions: 15,
-    avgTransaction: 163.37,
-  };
-
-  // Mock recent transactions
-  const recentTransactions = [
-    {
-      id: 1,
-      invoice_number: 'INV-2025-001',
-      date: '2025-12-30',
-      time: '10:30 AM',
+  // Sort transactions (latest first) and map to display format
+  const recentTransactions = transactions
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .map(t => ({
+      id: t.id,
+      invoice_number: t.transactionNumber,
+      date: new Date(t.date).toLocaleDateString(),
+      time: new Date(t.date).toLocaleTimeString(),
       customer: 'Walk-in Customer',
-      payment_method: 'Cash',
-      total: 156.50,
-      items: [
-        { name: 'Hydrating Cleanser', quantity: 2, price: 24.99 },
-        { name: 'Vitamin C Serum', quantity: 1, price: 45.00 },
-        { name: 'Moisturizing Cream', quantity: 2, price: 32.50 },
-      ],
-      status: 'Completed',
-    },
-    {
-      id: 2,
-      invoice_number: 'INV-2025-002',
-      date: '2025-12-30',
-      time: '11:15 AM',
-      customer: 'Sarah Johnson',
-      payment_method: 'Card',
-      total: 89.99,
-      items: [
-        { name: 'Sunscreen SPF 50', quantity: 2, price: 28.00 },
-        { name: 'Face Mask Pack', quantity: 2, price: 15.99 },
-      ],
-      status: 'Completed',
-    },
-    {
-      id: 3,
-      invoice_number: 'INV-2025-003',
-      date: '2025-12-30',
-      time: '12:45 PM',
-      customer: 'Walk-in Customer',
-      payment_method: 'Cash',
-      total: 67.00,
-      items: [
-        { name: 'Toner Essence', quantity: 2, price: 22.00 },
-        { name: 'Hydrating Cleanser', quantity: 1, price: 24.99 },
-      ],
-      status: 'Completed',
-    },
-    {
-      id: 4,
-      invoice_number: 'INV-2025-004',
-      date: '2025-12-30',
-      time: '02:20 PM',
-      customer: 'Michael Chen',
-      payment_method: 'Mobile',
-      total: 122.50,
-      items: [
-        { name: 'Vitamin C Serum', quantity: 1, price: 45.00 },
-        { name: 'Moisturizing Cream', quantity: 1, price: 32.50 },
-        { name: 'Sunscreen SPF 50', quantity: 1, price: 28.00 },
-        { name: 'Toner Essence', quantity: 1, price: 22.00 },
-      ],
-      status: 'Completed',
-    },
-    {
-      id: 5,
-      invoice_number: 'INV-2025-005',
-      date: '2025-12-30',
-      time: '03:50 PM',
-      customer: 'Walk-in Customer',
-      payment_method: 'Cash',
-      total: 75.98,
-      items: [
-        { name: 'Face Mask Pack', quantity: 3, price: 15.99 },
-        { name: 'Sunscreen SPF 50', quantity: 1, price: 28.00 },
-      ],
-      status: 'Completed',
-    },
-  ];
+      payment_method: t.paymentMethod,
+      total: t.total,
+      items: t.items?.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price
+      })) || [],
+      status: t.status,
+    }));
 
   const handleViewTransaction = (transaction) => {
     setSelectedTransaction(transaction);

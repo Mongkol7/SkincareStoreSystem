@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card, { CardHeader } from '../common/Card';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
 import { CheckCircleIcon, ExclamationTriangleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import api from '../../services/api';
 
 const CloseBatch = () => {
   const navigate = useNavigate();
@@ -48,16 +49,22 @@ const CloseBatch = () => {
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      // await batchService.closeBatch({ closing_cash: closingCash, remarks });
+      // Close batch via API
+      await api.put(`/batches/${batchData.id || 1}/close`, {
+        closingCash: parseFloat(closingCash),
+        remarks,
+        totalSales: batchData.total_sales,
+        cashSales: batchData.cash_sales,
+        cardSales: batchData.card_sales,
+        transactions: batchData.transaction_count
+      });
 
-      setTimeout(() => {
-        setLoading(false);
-        navigate('/cashier/dashboard');
-      }, 1000);
+      alert('✓ Batch closed successfully!');
+      navigate('/cashier/dashboard');
     } catch (error) {
       setLoading(false);
       console.error('Error closing batch:', error);
+      alert('Failed to close batch. Please try again.');
     }
   };
 

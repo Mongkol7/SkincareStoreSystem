@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import Card, { CardHeader } from '../common/Card';
 import Input from '../common/Input';
 import Select from '../common/Select';
 import Button from '../common/Button';
 import { CurrencyDollarIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import api from '../../services/api';
 
 const OpenBatch = () => {
   const navigate = useNavigate();

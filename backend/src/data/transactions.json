@@ -131,5 +131,55 @@
     "id": 4,
     "createdAt": "2026-01-04T11:31:55.449Z",
     "updatedAt": "2026-01-04T11:31:55.449Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 5,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      }
+    ],
+    "subtotal": 17,
+    "tax": 1.7000000000000002,
+    "total": 18.7,
+    "paymentMethod": "Cash",
+    "amountReceived": 25,
+    "change": 5,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-005",
+    "cashier": "cashier1",
+    "date": "2026-01-04T12:24:58.501Z",
+    "id": 5,
+    "createdAt": "2026-01-04T12:24:58.502Z",
+    "updatedAt": "2026-01-04T12:24:58.502Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 4,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      }
+    ],
+    "subtotal": 13.6,
+    "tax": 1.36,
+    "total": 14.959999999999999,
+    "paymentMethod": "Cash",
+    "amountReceived": 20,
+    "change": 4,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-006",
+    "cashier": "admin",
+    "date": "2026-01-04T12:31:46.754Z",
+    "id": 6,
+    "createdAt": "2026-01-04T12:31:46.755Z",
+    "updatedAt": "2026-01-04T12:31:46.755Z"
   }
 ]

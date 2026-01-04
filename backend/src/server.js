@@ -24,6 +24,7 @@ const purchaseOrdersRoutes = require('./routes/purchaseOrders');
 const transactionsRoutes = require('./routes/transactions');
 const staffRoutes = require('./routes/staff');
 const settingsRoutes = require('./routes/settings');
+const batchesRoutes = require('./routes/batches');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productsRoutes);
@@ -31,6 +32,7 @@ app.use('/api/purchase-orders', purchaseOrdersRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/batches', batchesRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

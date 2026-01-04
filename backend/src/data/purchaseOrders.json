@@ -294,5 +294,49 @@
     "id": 13,
     "createdAt": "2026-01-04T12:20:45.835Z",
     "updatedAt": "2026-01-04T12:21:25.915Z"
+  },
+  {
+    "supplier": "BeautySupply Co",
+    "expectedDelivery": "2026-01-10",
+    "items": 1,
+    "totalAmount": 12,
+    "itemsList": [
+      {
+        "product": "Vitamin C Serum",
+        "quantity": 3,
+        "unitPrice": 4
+      }
+    ],
+    "notes": "Reorder for Vitamin C Serum - Low stock alert",
+    "poNumber": "PO-2025-014",
+    "status": "Received",
+    "approvedBy": "admin",
+    "createdBy": "stockmanager",
+    "date": "2026-01-04",
+    "id": 14,
+    "createdAt": "2026-01-04T12:24:07.514Z",
+    "updatedAt": "2026-01-04T12:24:19.571Z"
+  },
+  {
+    "supplier": "BeautySupply Co",
+    "expectedDelivery": "2026-01-07",
+    "items": 1,
+    "totalAmount": 80,
+    "itemsList": [
+      {
+        "product": "Vitamin C Serum",
+        "quantity": 20,
+        "unitPrice": 4
+      }
+    ],
+    "notes": "Reorder for Vitamin C Serum - Low stock alert",
+    "poNumber": "PO-2025-015",
+    "status": "Received",
+    "approvedBy": "admin",
+    "createdBy": "stockmanager",
+    "date": "2026-01-04",
+    "id": 15,
+    "createdAt": "2026-01-04T12:32:51.757Z",
+    "updatedAt": "2026-01-04T12:33:35.222Z"
   }
 ]

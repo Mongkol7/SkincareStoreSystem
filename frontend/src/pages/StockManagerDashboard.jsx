@@ -36,6 +36,11 @@ const StockManagerDashboard = () => {
   // Get low stock products from real data
   const lowStockProducts = products.filter(p => p.stock < p.min_stock);
 
+  // Sort purchase orders (latest first)
+  const sortedPurchaseOrders = [...purchaseOrders].sort((a, b) =>
+    new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
+  );
+
   const stats = {
     totalProducts: products.length,
     lowStock: lowStockProducts.length,
@@ -368,7 +373,7 @@ const StockManagerDashboard = () => {
             />
             <Table
               columns={poColumns}
-              data={purchaseOrders}
+              data={sortedPurchaseOrders}
             />
           </Card>
         </div>
