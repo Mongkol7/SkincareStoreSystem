@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card, { CardHeader } from '../common/Card';
 import Button from '../common/Button';
@@ -17,14 +17,17 @@ import {
   ClockIcon,
   EyeIcon,
 } from '@heroicons/react/24/outline';
+import { useProducts } from '../../context/ProductContext';
+import api from '../../services/api';
 
 const SalesPage = () => {
   const navigate = useNavigate();
+  const { products, updateProduct, fetchProducts } = useProducts();
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [paymentMethod] = useState('Cash');
   const [moneyReceived, setMoneyReceived] = useState('');
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [showReceiptDetail, setShowReceiptDetail] = useState(false);
@@ -72,31 +75,12 @@ const SalesPage = () => {
     },
   ]);
 
-  // Mock products data
-  const products = [
-    { id: 1, name: 'Hydrating Cleanser', category: 'Cleanser', originalPrice: 29.99, sellingPrice: 24.99, discount: 17, stock: 50, image: '🧴' },
-    { id: 2, name: 'Vitamin C Serum', category: 'Serum', originalPrice: 45.00, sellingPrice: 45.00, discount: 0, stock: 30, image: '💧' },
-    { id: 3, name: 'Moisturizing Cream', category: 'Cream', originalPrice: 35.00, sellingPrice: 32.50, discount: 7, stock: 40, image: '🫙' },
-    { id: 4, name: 'Sunscreen SPF 50', category: 'Sunscreen', originalPrice: 28.00, sellingPrice: 28.00, discount: 0, stock: 60, image: '☀️' },
-    { id: 5, name: 'Toner Essence', category: 'Toner', originalPrice: 25.00, sellingPrice: 22.00, discount: 12, stock: 35, image: '💦' },
-    { id: 6, name: 'Face Mask Pack', category: 'Mask', originalPrice: 19.99, sellingPrice: 15.99, discount: 20, stock: 80, image: '🎭' },
-  ];
-
-  const categories = [
-    { value: '', label: 'All Categories' },
-    { value: 'Cleanser', label: 'Cleanser' },
-    { value: 'Serum', label: 'Serum' },
-    { value: 'Cream', label: 'Cream' },
-    { value: 'Sunscreen', label: 'Sunscreen' },
-    { value: 'Toner', label: 'Toner' },
-    { value: 'Mask', label: 'Mask' },
-  ];
-
-  const paymentMethods = [
-    { value: 'Cash', label: 'Cash' },
-    { value: 'Card', label: 'Credit/Debit Card' },
-    { value: 'Mobile', label: 'Mobile Payment' },
-  ];
+  const categories = useMemo(() => {
+    return [
+      { value: '', label: 'All Categories' },
+      ...[...new Set(products.map(p => p.category))].map(c => ({ value: c, label: c }))
+    ];
+  }, [products]);
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -105,6 +89,15 @@ const SalesPage = () => {
   });
 
   const addToCart = (product) => {
+    console.log('Adding to cart - Product data:', {
+      id: product.id,
+      name: product.name,
+      sellingPrice: product.sellingPrice,
+      originalPrice: product.originalPrice,
+      discount: product.discount,
+      price: product.price
+    });
+
     const existingItem = cart.find((item) => item.id === product.id);
     if (existingItem) {
       setCart(
@@ -113,7 +106,34 @@ const SalesPage = () => {
         )
       );
     } else {
-      setCart([...cart, { ...product, quantity: 1, price: product.sellingPrice, discount: product.discount }]);
+      // Robust type conversion for price fields
+      const convertToNumber = (value, fallback = 0) => {
+        if (value === null || value === undefined || value === '') return fallback;
+        const num = typeof value === 'string' ? parseFloat(value) : value;
+        return isNaN(num) ? fallback : num;
+      };
+
+      const sellingPrice = convertToNumber(product.sellingPrice, convertToNumber(product.price, 0));
+      const originalPrice = convertToNumber(product.originalPrice, sellingPrice);
+      const discount = convertToNumber(product.discount, 0);
+
+      const cartItem = {
+        ...product,
+        quantity: 1,
+        price: sellingPrice,
+        sellingPrice: sellingPrice,
+        originalPrice: originalPrice,
+        discount: discount
+      };
+
+      console.log('Cart item being added:', {
+        name: cartItem.name,
+        sellingPrice: cartItem.sellingPrice,
+        originalPrice: cartItem.originalPrice,
+        discount: cartItem.discount
+      });
+
+      setCart([...cart, cartItem]);
     }
   };
 
@@ -134,18 +154,29 @@ const SalesPage = () => {
   };
 
   const calculateSubtotal = () => {
-    return cart.reduce((sum, item) => sum + item.sellingPrice * item.quantity, 0);
+    // Subtotal is based on original prices
+    return cart.reduce((sum, item) => {
+      const originalPrice = item.originalPrice || item.price;
+      return sum + (originalPrice * item.quantity);
+    }, 0);
   };
 
   const calculateDiscount = () => {
+    // Discount is the difference between original and selling price
     return cart.reduce((sum, item) => {
-      const itemDiscountAmount = (item.price * item.discount) / 100;
-      return sum + (itemDiscountAmount * item.quantity);
+      const originalPrice = item.originalPrice || item.price;
+      const sellingPrice = item.sellingPrice || item.price;
+      const itemDiscount = (originalPrice - sellingPrice) * item.quantity;
+      return sum + itemDiscount;
     }, 0);
   };
 
   const calculateTotal = () => {
-    return calculateSubtotal() - calculateDiscount();
+    // Total is based on selling prices
+    return cart.reduce((sum, item) => {
+      const sellingPrice = item.sellingPrice || item.price;
+      return sum + (sellingPrice * item.quantity);
+    }, 0);
   };
 
   const calculateChange = () => {
@@ -167,7 +198,7 @@ const SalesPage = () => {
     return `${diffInDays}d ago`;
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     // Validate that money received is sufficient
     const change = calculateChange();
     if (change < 0) {
@@ -175,36 +206,99 @@ const SalesPage = () => {
       return;
     }
 
-    // Create new receipt
-    const newReceipt = {
-      id: `RCP-${String(recentReceipts.length + 1).padStart(3, '0')}`,
-      date: new Date().toISOString(),
-      items: cart.length,
-      total: calculateTotal(),
-      payment: 'Cash',
-      moneyReceived: parseFloat(moneyReceived),
-      change: change,
-      cartItems: cart.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-    };
+    try {
+      // Calculate totals
+      const subtotal = cart.reduce((sum, item) => {
+        const afterDiscountPrice = item.sellingPrice * (1 - (item.discount || 0) / 100);
+        return sum + (afterDiscountPrice * item.quantity);
+      }, 0);
 
-    // Add to recent receipts (keep last 5)
-    setRecentReceipts([newReceipt, ...recentReceipts].slice(0, 5));
+      const tax = subtotal * 0.1; // 10% tax
+      const total = subtotal + tax;
 
-    // TODO: Process payment and create sale
-    console.log('Processing sale...', {
-      items: cart,
-      paymentMethod,
-      total: calculateTotal(),
-      moneyReceived: parseFloat(moneyReceived),
-      change: change,
-    });
-    setCart([]);
-    setMoneyReceived('');
-    setShowCheckout(false);
+      // Helper function for robust number conversion
+      const ensureNumber = (value, fallback = 0) => {
+        if (value === null || value === undefined || value === '') return fallback;
+        const num = typeof value === 'string' ? parseFloat(value) : value;
+        return isNaN(num) ? fallback : num;
+      };
+
+      // Create transaction data
+      const transactionData = {
+        items: cart.map(item => {
+          const sellingPrice = ensureNumber(item.sellingPrice, 0);
+          const discount = ensureNumber(item.discount, 0);
+          const afterDiscountPrice = sellingPrice * (1 - discount / 100);
+
+          const itemData = {
+            productId: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            sellingPrice: sellingPrice,
+            discount: discount,
+            price: afterDiscountPrice,
+          };
+          console.log('Transaction item:', itemData);
+          return itemData;
+        }),
+        subtotal: subtotal,
+        tax: tax,
+        total: total,
+        paymentMethod: paymentMethod,
+        amountReceived: parseFloat(moneyReceived),
+        change: change,
+        status: 'Completed'
+      };
+
+      // Save transaction to backend
+      const response = await api.post('/transactions', transactionData);
+
+      // Update stock for each product
+      for (const item of cart) {
+        const product = products.find(p => p.id === item.id);
+        if (product) {
+          const newStock = product.stock - item.quantity;
+          await updateProduct({
+            ...product,
+            stock: newStock,
+            status: newStock === 0 ? 'Out of Stock' :
+                    newStock < product.min_stock ? 'Low Stock' : 'Active'
+          });
+        }
+      }
+
+      // Refresh products list
+      await fetchProducts();
+
+      // Create new receipt for local display
+      const newReceipt = {
+        id: response.data.transactionNumber || `RCP-${String(recentReceipts.length + 1).padStart(3, '0')}`,
+        date: new Date().toISOString(),
+        items: cart.length,
+        total: total,
+        payment: paymentMethod,
+        moneyReceived: parseFloat(moneyReceived),
+        change: change,
+        cartItems: cart.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.sellingPrice * (1 - (item.discount || 0) / 100),
+        })),
+      };
+
+      // Add to recent receipts (keep last 5)
+      setRecentReceipts([newReceipt, ...recentReceipts].slice(0, 5));
+
+      // Clear cart and close checkout
+      setCart([]);
+      setMoneyReceived('');
+      setShowCheckout(false);
+
+      alert(`✓ Sale completed successfully!\nTransaction: ${response.data.transactionNumber}`);
+    } catch (error) {
+      console.error('Error processing sale:', error);
+      alert('Failed to process sale. Please try again.');
+    }
   };
 
   return (
@@ -255,10 +349,27 @@ const SalesPage = () => {
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="glass-card p-4 hover:bg-white/15 transition-all cursor-pointer"
+                className="glass-card p-4 hover:bg-white/15 transition-all cursor-pointer relative"
                 onClick={() => addToCart(product)}
               >
-                <div className="text-4xl mb-3 text-center">{product.image}</div>
+                {/* Product Image */}
+                <div className="mb-3 flex items-center justify-center h-32 bg-white/5 rounded-lg overflow-hidden">
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                  ) : null}
+                  <div className="text-4xl text-white/40" style={{ display: product.image ? 'none' : 'block' }}>
+                    📦
+                  </div>
+                </div>
+
                 <h3 className="text-sm font-semibold text-white mb-1 line-clamp-2">
                   {product.name}
                 </h3>
@@ -266,17 +377,38 @@ const SalesPage = () => {
                   <Badge variant="glass">{product.category}</Badge>
                   <span className="text-xs text-white/60">Stock: {product.stock}</span>
                 </div>
+
+                {/* Price Display */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-white">${product.sellingPrice.toFixed(2)}</span>
-                    {product.discount > 0 && (
-                      <span className="text-xs text-white/60 line-through">${product.originalPrice.toFixed(2)}</span>
+                  <div className="flex flex-col gap-1">
+                    {product.discount > 0 ? (
+                      <>
+                        {/* After Discount Price (Main) */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-bold text-success-400">
+                            ${(product.sellingPrice * (1 - product.discount / 100)).toFixed(2)}
+                          </span>
+                          {/* Selling Price (Crossed Out) */}
+                          <span className="text-xs text-white/40 line-through">
+                            ${product.sellingPrice.toFixed(2)}
+                          </span>
+                        </div>
+                        <span className="text-xs text-success-400">
+                          Save ${(product.sellingPrice * (product.discount / 100)).toFixed(2)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-lg font-bold text-white">
+                        ${product.sellingPrice.toFixed(2)}
+                      </span>
                     )}
                   </div>
-                  <Button variant="primary" size="sm" onClick={() => addToCart(product)}>
+                  <Button variant="primary" size="sm" onClick={(e) => { e.stopPropagation(); addToCart(product); }}>
                     <PlusIcon className="w-4 h-4" />
                   </Button>
                 </div>
+
+                {/* Discount Badge */}
                 {product.discount > 0 && (
                   <div className="absolute top-2 right-2">
                     <Badge variant="danger">-{product.discount}%</Badge>
@@ -406,7 +538,7 @@ const SalesPage = () => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => updateQuantity(item.id, -1)}
-                          className="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                          className="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-lg transition-colors" 
                         >
                           <MinusIcon className="w-4 h-4 text-white" />
                         </button>
@@ -415,7 +547,7 @@ const SalesPage = () => {
                         </span>
                         <button
                           onClick={() => updateQuantity(item.id, 1)}
-                          className="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                          className="w-7 h-7 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-lg transition-colors" 
                         >
                           <PlusIcon className="w-4 h-4 text-white" />
                         </button>

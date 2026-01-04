@@ -23,7 +23,8 @@
       "Bash(timeout 10 npm start:*)",
       "Bash(exit 0)",
       "Bash(npm init:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }

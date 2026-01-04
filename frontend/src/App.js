@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import { StoreSettingsProvider } from './context/StoreSettingsContext';
 import { POProvider } from './context/POContext';
+import { ProductProvider } from './context/ProductContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Pages
@@ -40,9 +41,10 @@ function App() {
     <Router>
       <StoreSettingsProvider>
         <AuthProvider>
-          <POProvider>
-            <CreatePOModal />
-            <Routes>
+          <ProductProvider>
+            <POProvider>
+              <CreatePOModal />
+              <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
 
@@ -289,7 +291,8 @@ function App() {
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
-          </POProvider>
+            </POProvider>
+          </ProductProvider>
         </AuthProvider>
       </StoreSettingsProvider>
     </Router>

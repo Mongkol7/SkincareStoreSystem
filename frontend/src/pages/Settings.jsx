@@ -69,7 +69,8 @@ const Settings = () => {
       if (response.data) {
         if (response.data.store) {
           setStoreSettings(response.data.store);
-          updateGlobalStoreSettings(response.data.store);
+          // Note: Don't call updateGlobalStoreSettings here as it will trigger a backend save
+          // The context already loads from backend on mount
         }
         setStoreInfo(response.data.storeInfo || storeInfo);
         setNotificationSettings(response.data.notifications || notificationSettings);
@@ -91,19 +92,18 @@ const Settings = () => {
     setLoading(true);
     console.log('Saving store settings:', storeSettings);
     try {
-      // Update global context first (for immediate UI update)
-      updateGlobalStoreSettings(storeSettings);
+      // Update via global context (which now saves to backend)
+      const result = await updateGlobalStoreSettings(storeSettings);
       console.log('Global context updated');
 
-      // Try to save to API
-      await api.put('/settings/general', storeSettings);
-      showNotification('General settings saved successfully', 'success');
+      if (result.success) {
+        showNotification('General settings saved successfully', 'success');
+      } else {
+        showNotification('Settings saved locally (backend unavailable)', 'success');
+      }
     } catch (error) {
       console.error('Error saving general settings:', error);
-      // Still update locally even if API fails
-      updateGlobalStoreSettings(storeSettings);
-      console.log('Updated locally after API failure');
-      showNotification('Settings saved locally (API unavailable)', 'success');
+      showNotification('Failed to save settings', 'error');
     } finally {
       setLoading(false);
     }

@@ -8,9 +8,11 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Modal from '../components/common/Modal';
 import { MagnifyingGlassIcon, PlusIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useProducts } from '../context/ProductContext';
 
 const Products = () => {
   const { user } = useAuth();
+  const { products, addProduct, updateProduct } = useProducts();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -20,94 +22,6 @@ const Products = () => {
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
-
-  // Mock product data with state
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      sku: 'SKU-001',
-      name: 'Vitamin C Serum',
-      category: 'Serum',
-      brand: 'GlowSkin',
-      originalPrice: 45.99,
-      sellingPrice: 39.99,
-      discount: 13,
-      price: 45.99, // Keep for backward compatibility
-      stock: 5,
-      min_stock: 10,
-      status: 'Low Stock'
-    },
-    {
-      id: 2,
-      sku: 'SKU-002',
-      name: 'Hydrating Cleanser',
-      category: 'Cleanser',
-      brand: 'PureGlow',
-      originalPrice: 32.99,
-      sellingPrice: 29.99,
-      discount: 9,
-      price: 29.99,
-      stock: 3,
-      min_stock: 15,
-      status: 'Low Stock'
-    },
-    {
-      id: 3,
-      sku: 'SKU-003',
-      name: 'Sunscreen SPF 50',
-      category: 'Sunscreen',
-      brand: 'SunShield',
-      originalPrice: 35.00,
-      sellingPrice: 35.00,
-      discount: 0,
-      price: 35.00,
-      stock: 25,
-      min_stock: 20,
-      status: 'In Stock'
-    },
-    {
-      id: 4,
-      sku: 'SKU-004',
-      name: 'Hyaluronic Acid Moisturizer',
-      category: 'Moisturizer',
-      brand: 'HydraPlus',
-      originalPrice: 59.99,
-      sellingPrice: 52.50,
-      discount: 12,
-      price: 52.50,
-      stock: 18,
-      min_stock: 10,
-      status: 'In Stock'
-    },
-    {
-      id: 5,
-      sku: 'SKU-005',
-      name: 'Retinol Night Cream',
-      category: 'Night Cream',
-      brand: 'YouthGlow',
-      originalPrice: 78.00,
-      sellingPrice: 68.00,
-      discount: 13,
-      price: 68.00,
-      stock: 12,
-      min_stock: 8,
-      status: 'In Stock'
-    },
-    {
-      id: 6,
-      sku: 'SKU-006',
-      name: 'Gentle Exfoliating Scrub',
-      category: 'Exfoliator',
-      brand: 'SmoothSkin',
-      originalPrice: 27.99,
-      sellingPrice: 24.99,
-      discount: 11,
-      price: 24.99,
-      stock: 0,
-      min_stock: 12,
-      status: 'Out of Stock'
-    },
-  ]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -121,29 +35,38 @@ const Products = () => {
     price: '', // Keep for backward compatibility
     stock: '',
     min_stock: '',
+    image: '',
   });
 
   const [restockQuantity, setRestockQuantity] = useState('');
 
-  // Calculate discount percentage
-  const calculateDiscount = (original, selling) => {
-    if (!original || !selling || original <= 0) return 0;
-    const discount = ((parseFloat(original) - parseFloat(selling)) / parseFloat(original)) * 100;
-    return Math.round(discount);
+  const [priceAfterDiscount, setPriceAfterDiscount] = useState(0);
+  const [totalValue, setTotalValue] = useState(0);
+
+  // Handle form changes
+  const handleFormChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
   };
 
-  // Handle price changes with auto-discount calculation
-  const handlePriceChange = (field, value) => {
-    const newFormData = { ...formData, [field]: value };
+  // Recalculate price after discount and total value whenever relevant fields change
+  React.useEffect(() => {
+    const selling = parseFloat(formData.sellingPrice);
+    const discount = parseFloat(formData.discount);
+    const stock = parseInt(formData.stock);
 
-    if (field === 'originalPrice' || field === 'sellingPrice') {
-      const original = field === 'originalPrice' ? value : formData.originalPrice;
-      const selling = field === 'sellingPrice' ? value : formData.sellingPrice;
-      newFormData.discount = calculateDiscount(original, selling);
+    if (!isNaN(selling) && !isNaN(discount)) {
+      const newPrice = selling * (1 - discount / 100);
+      setPriceAfterDiscount(newPrice.toFixed(2));
+      if (!isNaN(stock)) {
+        setTotalValue((newPrice * stock).toFixed(2));
+      } else {
+        setTotalValue(0);
+      }
+    } else {
+      setPriceAfterDiscount(0);
+      setTotalValue(0);
     }
-
-    setFormData(newFormData);
-  };
+  }, [formData.sellingPrice, formData.discount, formData.stock]);
 
   // Get unique categories
   const categories = useMemo(() => {
@@ -166,11 +89,13 @@ const Products = () => {
   }, [products, searchTerm, filterCategory, filterStatus]);
 
   // Handle Add Product
-  const handleAddProduct = (e) => {
+  const handleAddProduct = async (e) => {
     e.preventDefault();
     const newProduct = {
-      id: products.length + 1,
-      ...formData,
+      sku: formData.sku,
+      name: formData.name,
+      category: formData.category,
+      brand: formData.brand,
       originalPrice: parseFloat(formData.originalPrice),
       sellingPrice: parseFloat(formData.sellingPrice),
       discount: formData.discount,
@@ -178,69 +103,79 @@ const Products = () => {
       stock: parseInt(formData.stock),
       min_stock: parseInt(formData.min_stock),
       status: parseInt(formData.stock) === 0 ? 'Out of Stock' :
-              parseInt(formData.stock) < parseInt(formData.min_stock) ? 'Low Stock' : 'In Stock'
+              parseInt(formData.stock) < parseInt(formData.min_stock) ? 'Low Stock' : 'Active',
+      barcode: `885${Date.now().toString().slice(-10)}`,
+      description: `${formData.name} - ${formData.category}`,
+      cost: parseFloat(formData.originalPrice) * 0.5,
+      supplier: 'Default Supplier',
+      image: formData.image || ''
     };
 
-    setProducts([...products, newProduct]);
+    await addProduct(newProduct);
     setIsAddModalOpen(false);
     resetForm();
+    alert('✓ Product added successfully!');
   };
 
   // Handle Edit Product
-  const handleEditProduct = (e) => {
+  const handleEditProduct = async (e) => {
     e.preventDefault();
-    setProducts(products.map(p =>
-      p.id === selectedProduct.id
-        ? {
-            ...p,
-            ...formData,
-            originalPrice: parseFloat(formData.originalPrice),
-            sellingPrice: parseFloat(formData.sellingPrice),
-            discount: formData.discount,
-            price: parseFloat(formData.sellingPrice), // Use selling price as default price
-            stock: parseInt(formData.stock),
-            min_stock: parseInt(formData.min_stock),
-            status: parseInt(formData.stock) === 0 ? 'Out of Stock' :
-                    parseInt(formData.stock) < parseInt(formData.min_stock) ? 'Low Stock' : 'In Stock'
-          }
-        : p
-    ));
+    const updatedProduct = {
+        ...selectedProduct,
+        sku: formData.sku,
+        name: formData.name,
+        category: formData.category,
+        brand: formData.brand,
+        originalPrice: parseFloat(formData.originalPrice),
+        sellingPrice: parseFloat(formData.sellingPrice),
+        discount: formData.discount,
+        price: parseFloat(formData.sellingPrice), // Use selling price as default price
+        stock: parseInt(formData.stock),
+        min_stock: parseInt(formData.min_stock),
+        status: parseInt(formData.stock) === 0 ? 'Out of Stock' :
+                parseInt(formData.stock) < parseInt(formData.min_stock) ? 'Low Stock' : 'Active',
+        image: formData.image || ''
+      };
+
+    await updateProduct(updatedProduct);
     setIsEditModalOpen(false);
     resetForm();
+    alert('✓ Product updated successfully!');
   };
 
   // Handle Restock
-  const handleRestock = (e) => {
+  const handleRestock = async (e) => {
     e.preventDefault();
     const quantity = parseInt(restockQuantity);
-    setProducts(products.map(p =>
-      p.id === selectedProduct.id
-        ? {
-            ...p,
-            stock: p.stock + quantity,
-            status: (p.stock + quantity) === 0 ? 'Out of Stock' :
-                    (p.stock + quantity) < p.min_stock ? 'Low Stock' : 'In Stock'
-          }
-        : p
-    ));
+    const newStock = selectedProduct.stock + quantity;
+    const updatedProduct = {
+        ...selectedProduct,
+        stock: newStock,
+        status: newStock === 0 ? 'Out of Stock' :
+                newStock < selectedProduct.min_stock ? 'Low Stock' : 'Active'
+      };
+
+    await updateProduct(updatedProduct);
     setIsRestockModalOpen(false);
     setRestockQuantity('');
+    alert(`✓ Product restocked! New stock: ${newStock} units`);
   };
 
   // Open Edit Modal
   const openEditModal = (product) => {
     setSelectedProduct(product);
     setFormData({
-      sku: product.sku,
+      sku: product.sku || `SKU-${product.id}`,
       name: product.name,
       category: product.category,
-      brand: product.brand,
+      brand: product.brand || 'Unknown',
       originalPrice: (product.originalPrice || product.price).toString(),
       sellingPrice: (product.sellingPrice || product.price).toString(),
       discount: product.discount || 0,
       price: product.price.toString(),
       stock: product.stock.toString(),
       min_stock: product.min_stock.toString(),
+      image: product.image || '',
     });
     setIsEditModalOpen(true);
   };
@@ -282,9 +217,30 @@ const Products = () => {
     { field: 'category', label: 'Category' },
     { field: 'brand', label: 'Brand' },
     {
-      field: 'price',
-      label: 'Price',
-      render: (value) => <span className="font-semibold text-white">${value.toFixed(2)}</span>,
+      field: 'sellingPrice',
+      label: 'Selling Price',
+      render: (value) => <span className="text-white">${value?.toFixed(2) || 'N/A'}</span>,
+    },
+    {
+      field: 'discount',
+      label: 'Discount',
+      render: (value) => <span className="font-semibold text-white">{value}%</span>,
+    },
+    {
+      field: 'afterDiscountPrice',
+      label: 'After Discount Price',
+      render: (value, row) => {
+        const afterDiscount = row.sellingPrice * (1 - (row.discount || 0) / 100);
+        return <span className="font-semibold text-success-400">${afterDiscount.toFixed(2)}</span>;
+      },
+    },
+    {
+      field: 'total',
+      label: 'Total Value',
+      render: (value, row) => {
+        const afterDiscount = row.sellingPrice * (1 - (row.discount || 0) / 100);
+        return <span className="font-semibold text-white">${(afterDiscount * (row.stock || 0)).toFixed(2)}</span>;
+      },
     },
     {
       field: 'stock',
@@ -509,7 +465,7 @@ const Products = () => {
                 type="number"
                 step="0.01"
                 value={formData.originalPrice}
-                onChange={(e) => handlePriceChange('originalPrice', e.target.value)}
+                onChange={(e) => handleFormChange('originalPrice', e.target.value)}
                 placeholder="0.00"
               />
             </div>
@@ -520,14 +476,23 @@ const Products = () => {
                 type="number"
                 step="0.01"
                 value={formData.sellingPrice}
-                onChange={(e) => handlePriceChange('sellingPrice', e.target.value)}
+                onChange={(e) => handleFormChange('sellingPrice', e.target.value)}
                 placeholder="0.00"
               />
             </div>
             <div>
               <label className="block text-sm text-white/70 mb-2">Discount (%)</label>
+              <Input
+                type="number"
+                value={formData.discount}
+                onChange={(e) => handleFormChange('discount', e.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Price After Discount ($)</label>
               <div className="glass-card p-3 bg-success-500/10">
-                <p className="text-xl font-bold text-success-400">{formData.discount}% OFF</p>
+                <p className="text-xl font-bold text-success-400">${priceAfterDiscount}</p>
               </div>
             </div>
             <div>
@@ -550,6 +515,36 @@ const Products = () => {
                 placeholder="0"
               />
             </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Total Value ($)</label>
+              <div className="glass-card p-3 bg-info-500/10">
+                <p className="text-xl font-bold text-info-400">${totalValue}</p>
+              </div>
+            </div>
+          </div>
+          <div className="mb-6">
+            <label className="block text-sm text-white/70 mb-2">Product Image URL</label>
+            <Input
+              value={formData.image}
+              onChange={(e) => setFormData({...formData, image: e.target.value})}
+              placeholder="Paste image URL here (e.g., https://example.com/image.jpg)"
+            />
+            <p className="text-xs text-white/40 mt-1">Optional: Paste a direct link to the product image. This will be displayed in Cashier's New Sale.</p>
+            {formData.image && (
+              <div className="mt-3 glass-card p-3">
+                <p className="text-xs text-white/60 mb-2">Image Preview:</p>
+                <img
+                  src={formData.image}
+                  alt="Product preview"
+                  className="w-24 h-24 object-cover rounded border border-white/10"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  }}
+                />
+                <p className="text-xs text-danger-400 mt-2" style={{display: 'none'}}>Invalid image URL</p>
+              </div>
+            )}
           </div>
           <div className="flex gap-3 justify-end">
             <Button type="button" variant="secondary" onClick={() => { setIsAddModalOpen(false); resetForm(); }}>
@@ -610,7 +605,7 @@ const Products = () => {
                 type="number"
                 step="0.01"
                 value={formData.originalPrice}
-                onChange={(e) => handlePriceChange('originalPrice', e.target.value)}
+                onChange={(e) => handleFormChange('originalPrice', e.target.value)}
                 placeholder="0.00"
               />
             </div>
@@ -621,14 +616,23 @@ const Products = () => {
                 type="number"
                 step="0.01"
                 value={formData.sellingPrice}
-                onChange={(e) => handlePriceChange('sellingPrice', e.target.value)}
+                onChange={(e) => handleFormChange('sellingPrice', e.target.value)}
                 placeholder="0.00"
               />
             </div>
             <div>
               <label className="block text-sm text-white/70 mb-2">Discount (%)</label>
+              <Input
+                type="number"
+                value={formData.discount}
+                onChange={(e) => handleFormChange('discount', e.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Price After Discount ($)</label>
               <div className="glass-card p-3 bg-success-500/10">
-                <p className="text-xl font-bold text-success-400">{formData.discount}% OFF</p>
+                <p className="text-xl font-bold text-success-400">${priceAfterDiscount}</p>
               </div>
             </div>
             <div>
@@ -649,6 +653,36 @@ const Products = () => {
                 onChange={(e) => setFormData({...formData, min_stock: e.target.value})}
               />
             </div>
+            <div>
+              <label className="block text-sm text-white/70 mb-2">Total Value ($)</label>
+              <div className="glass-card p-3 bg-info-500/10">
+                <p className="text-xl font-bold text-info-400">${totalValue}</p>
+              </div>
+            </div>
+          </div>
+          <div className="mb-6">
+            <label className="block text-sm text-white/70 mb-2">Product Image URL</label>
+            <Input
+              value={formData.image}
+              onChange={(e) => setFormData({...formData, image: e.target.value})}
+              placeholder="Paste image URL here (e.g., https://example.com/image.jpg)"
+            />
+            <p className="text-xs text-white/40 mt-1">Optional: Paste a direct link to the product image. This will be displayed in Cashier's New Sale.</p>
+            {formData.image && (
+              <div className="mt-3 glass-card p-3">
+                <p className="text-xs text-white/60 mb-2">Image Preview:</p>
+                <img
+                  src={formData.image}
+                  alt="Product preview"
+                  className="w-24 h-24 object-cover rounded border border-white/10"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'block';
+                  }}
+                />
+                <p className="text-xs text-danger-400 mt-2" style={{display: 'none'}}>Invalid image URL</p>
+              </div>
+            )}
           </div>
           <div className="flex gap-3 justify-end">
             <Button type="button" variant="secondary" onClick={() => { setIsEditModalOpen(false); resetForm(); }}>

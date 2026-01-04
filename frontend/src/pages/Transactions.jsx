@@ -10,6 +10,7 @@ import Select from '../components/common/Select';
 import Modal from '../components/common/Modal';
 import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon, PrinterIcon, ArrowDownTrayIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { exportToCSV, exportToExcel, exportToPDF, formatTransactionsForExport } from '../utils/exportUtils';
+import api from '../services/api';
 
 const Transactions = () => {
   const { user } = useAuth();
@@ -25,111 +26,24 @@ const Transactions = () => {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef(null);
   const exportButtonRef = useRef(null);
+  const [transactions, setTransactions] = useState([]);
 
-  // Mock transaction data with detailed items
-  const [transactions] = useState([
-    {
-      id: 1,
-      invoice: 'INV-001',
-      date: '2025-12-28',
-      time: '10:30 AM',
-      cashier: 'John Doe',
-      customer: 'Sarah Johnson',
-      items: 3,
-      total: 150.00,
-      subtotal: 135.00,
-      tax: 13.50,
-      discount: 0,
-      payment: 'Cash',
-      status: 'Completed',
-      itemsList: [
-        { name: 'Moisturizing Cream', sku: 'MC-001', qty: 1, price: 45.00 },
-        { name: 'Sunscreen SPF 50', sku: 'SS-050', qty: 2, price: 45.00 }
-      ],
-      notes: 'Regular customer'
-    },
-    {
-      id: 2,
-      invoice: 'INV-002',
-      date: '2025-12-28',
-      time: '10:45 AM',
-      cashier: 'Jane Smith',
-      customer: 'Mike Wilson',
-      items: 5,
-      total: 250.50,
-      subtotal: 225.00,
-      tax: 22.50,
-      discount: 10.00,
-      payment: 'Credit Card',
-      status: 'Completed',
-      itemsList: [
-        { name: 'Face Wash', sku: 'FW-001', qty: 3, price: 25.00 },
-        { name: 'Night Serum', sku: 'NS-001', qty: 2, price: 75.00 }
-      ],
-      notes: 'Applied 10% discount code'
-    },
-    {
-      id: 3,
-      invoice: 'INV-003',
-      date: '2025-12-28',
-      time: '11:00 AM',
-      cashier: 'John Doe',
-      customer: 'Emily Chen',
-      items: 2,
-      total: 89.99,
-      subtotal: 80.85,
-      tax: 8.09,
-      discount: 0,
-      payment: 'Debit Card',
-      status: 'Completed',
-      itemsList: [
-        { name: 'Eye Cream', sku: 'EC-001', qty: 1, price: 35.00 },
-        { name: 'Toner', sku: 'TN-001', qty: 1, price: 45.85 }
-      ],
-      notes: ''
-    },
-    {
-      id: 4,
-      invoice: 'INV-004',
-      date: '2025-12-28',
-      time: '11:15 AM',
-      cashier: 'Mike Johnson',
-      customer: 'David Brown',
-      items: 4,
-      total: 320.00,
-      subtotal: 287.39,
-      tax: 28.74,
-      discount: 0,
-      payment: 'Cash',
-      status: 'Refunded',
-      itemsList: [
-        { name: 'Anti-Aging Cream', sku: 'AA-001', qty: 2, price: 95.00 },
-        { name: 'Vitamin C Serum', sku: 'VC-001', qty: 2, price: 48.695 }
-      ],
-      notes: 'Product defect - full refund issued'
-    },
-    {
-      id: 5,
-      invoice: 'INV-005',
-      date: '2025-12-27',
-      time: '03:20 PM',
-      cashier: 'Jane Smith',
-      customer: 'Lisa Anderson',
-      items: 6,
-      total: 445.75,
-      subtotal: 400.68,
-      tax: 40.07,
-      discount: 15.00,
-      payment: 'Credit Card',
-      status: 'Completed',
-      itemsList: [
-        { name: 'Cleanser Set', sku: 'CS-001', qty: 2, price: 55.00 },
-        { name: 'Face Mask Pack', sku: 'FM-001', qty: 3, price: 30.00 },
-        { name: 'Exfoliator', sku: 'EX-001', qty: 1, price: 80.68 }
-      ],
-      notes: 'VIP customer - 15% loyalty discount'
-    },
-  ]);
+  // Fetch transactions from backend
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const response = await api.get('/transactions');
+        setTransactions(response.data);
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      }
+    };
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchTransactions();
+    }
+  }, []);
 
   // Close export menu when clicking outside
   useEffect(() => {
@@ -156,22 +70,24 @@ const Transactions = () => {
     };
   }, [showExportMenu]);
 
-  // Filter and search transactions
+  // Filter, search, and sort transactions (latest on top)
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(transaction => {
-      const matchesSearch =
-        transaction.invoice.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.cashier.toLowerCase().includes(searchTerm.toLowerCase());
+    return transactions
+      .filter(transaction => {
+        const matchesSearch =
+          (transaction.transactionNumber || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (transaction.cashier || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesPayment = filterPayment === 'all' || transaction.payment === filterPayment;
-      const matchesStatus = filterStatus === 'all' || transaction.status === filterStatus;
+        const matchesPayment = filterPayment === 'all' || transaction.paymentMethod === filterPayment;
+        const matchesStatus = filterStatus === 'all' || transaction.status === filterStatus;
 
-      const matchesDateFrom = !dateFrom || transaction.date >= dateFrom;
-      const matchesDateTo = !dateTo || transaction.date <= dateTo;
+        const txnDate = new Date(transaction.date).toISOString().split('T')[0];
+        const matchesDateFrom = !dateFrom || txnDate >= dateFrom;
+        const matchesDateTo = !dateTo || txnDate <= dateTo;
 
-      return matchesSearch && matchesPayment && matchesStatus && matchesDateFrom && matchesDateTo;
-    });
+        return matchesSearch && matchesPayment && matchesStatus && matchesDateFrom && matchesDateTo;
+      })
+      .sort((a, b) => new Date(b.date) - new Date(a.date)); // Latest first
   }, [transactions, searchTerm, filterPayment, filterStatus, dateFrom, dateTo]);
 
   // Handle view transaction details
@@ -216,23 +132,34 @@ const Transactions = () => {
   };
 
   const columns = [
-    { field: 'invoice', label: 'Invoice #' },
-    { field: 'date', label: 'Date' },
-    { field: 'time', label: 'Time' },
+    {
+      field: 'transactionNumber',
+      label: 'Transaction #',
+      render: (value) => <span className="text-white font-medium">{value}</span>
+    },
+    {
+      field: 'date',
+      label: 'Date',
+      render: (value) => <span className="text-white/80">{new Date(value).toLocaleDateString()}</span>
+    },
+    {
+      field: 'date',
+      label: 'Time',
+      render: (value) => <span className="text-white/60 text-xs">{new Date(value).toLocaleTimeString()}</span>
+    },
     { field: 'cashier', label: 'Cashier' },
-    { field: 'customer', label: 'Customer' },
     {
       field: 'items',
       label: 'Items',
-      render: (value) => <span className="text-white/80">{value} items</span>
+      render: (value) => <span className="text-white/80">{value?.length || 0} items</span>
     },
     {
       field: 'total',
       label: 'Total',
-      render: (value) => <span className="font-semibold text-white">${value.toFixed(2)}</span>,
+      render: (value) => <span className="font-semibold text-white">${value?.toFixed(2) || '0.00'}</span>,
     },
     {
-      field: 'payment',
+      field: 'paymentMethod',
       label: 'Payment',
       render: (value) => <span className="text-white/70 text-xs">{value}</span>,
     },
@@ -427,8 +354,8 @@ const Transactions = () => {
             {/* Header Info */}
             <div className="grid grid-cols-2 gap-4 pb-6 border-b border-white/10">
               <div>
-                <p className="text-sm text-white/60 mb-1">Invoice Number</p>
-                <p className="text-lg font-semibold text-white">{selectedTransaction.invoice}</p>
+                <p className="text-sm text-white/60 mb-1">Transaction Number</p>
+                <p className="text-lg font-semibold text-white">{selectedTransaction.transactionNumber}</p>
               </div>
               <div>
                 <p className="text-sm text-white/60 mb-1">Status</p>
@@ -442,19 +369,19 @@ const Transactions = () => {
               </div>
               <div>
                 <p className="text-sm text-white/60 mb-1">Date & Time</p>
-                <p className="text-white">{selectedTransaction.date} at {selectedTransaction.time}</p>
+                <p className="text-white">{new Date(selectedTransaction.date).toLocaleString()}</p>
               </div>
               <div>
                 <p className="text-sm text-white/60 mb-1">Payment Method</p>
-                <p className="text-white">{selectedTransaction.payment}</p>
+                <p className="text-white">{selectedTransaction.paymentMethod}</p>
               </div>
               <div>
                 <p className="text-sm text-white/60 mb-1">Cashier</p>
                 <p className="text-white">{selectedTransaction.cashier}</p>
               </div>
               <div>
-                <p className="text-sm text-white/60 mb-1">Customer</p>
-                <p className="text-white">{selectedTransaction.customer}</p>
+                <p className="text-sm text-white/60 mb-1">Amount Received</p>
+                <p className="text-white">${selectedTransaction.amountReceived?.toFixed(2) || '0.00'}</p>
               </div>
             </div>
 
@@ -462,15 +389,31 @@ const Transactions = () => {
             <div>
               <h3 className="text-lg font-semibold text-white mb-4">Items Purchased</h3>
               <div className="space-y-3">
-                {selectedTransaction.itemsList.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center p-4 glass-card">
-                    <div className="flex-1">
-                      <p className="text-white font-medium">{item.name}</p>
-                      <p className="text-sm text-white/60">SKU: {item.sku}</p>
+                {(selectedTransaction.items || []).map((item, index) => (
+                  <div key={index} className="p-4 glass-card">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <p className="text-white font-medium">{item.name}</p>
+                        <p className="text-sm text-white/60">Quantity: {item.quantity}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="text-xs text-white/60">Total</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-white/60 text-sm">Qty: {item.qty}</p>
-                      <p className="text-white font-semibold">${(item.price * item.qty).toFixed(2)}</p>
+                    <div className="grid grid-cols-3 gap-3 text-sm pt-2 border-t border-white/10">
+                      <div>
+                        <p className="text-white/60">Selling Price</p>
+                        <p className="text-white">${item.sellingPrice?.toFixed(2) || '0.00'}</p>
+                      </div>
+                      <div>
+                        <p className="text-white/60">Discount</p>
+                        <p className="text-success-400">{item.discount || 0}%</p>
+                      </div>
+                      <div>
+                        <p className="text-white/60">After Discount</p>
+                        <p className="text-white font-medium">${item.price?.toFixed(2) || '0.00'}</p>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -481,31 +424,23 @@ const Transactions = () => {
             <div className="space-y-3 pt-6 border-t border-white/10">
               <div className="flex justify-between text-white/80">
                 <span>Subtotal</span>
-                <span>${selectedTransaction.subtotal.toFixed(2)}</span>
+                <span>${selectedTransaction.subtotal?.toFixed(2) || '0.00'}</span>
               </div>
-              {selectedTransaction.discount > 0 && (
-                <div className="flex justify-between text-green-400">
-                  <span>Discount</span>
-                  <span>-${selectedTransaction.discount.toFixed(2)}</span>
-                </div>
-              )}
               <div className="flex justify-between text-white/80">
                 <span>Tax (10%)</span>
-                <span>${selectedTransaction.tax.toFixed(2)}</span>
+                <span>${selectedTransaction.tax?.toFixed(2) || '0.00'}</span>
               </div>
               <div className="flex justify-between text-xl font-bold text-white pt-3 border-t border-white/10">
                 <span>Total</span>
-                <span>${selectedTransaction.total.toFixed(2)}</span>
+                <span>${selectedTransaction.total?.toFixed(2) || '0.00'}</span>
               </div>
+              {selectedTransaction.change > 0 && (
+                <div className="flex justify-between text-success-400 pt-2">
+                  <span>Change</span>
+                  <span>${selectedTransaction.change?.toFixed(2) || '0.00'}</span>
+                </div>
+              )}
             </div>
-
-            {/* Notes */}
-            {selectedTransaction.notes && (
-              <div className="p-4 glass-card">
-                <p className="text-sm text-white/60 mb-1">Notes</p>
-                <p className="text-white">{selectedTransaction.notes}</p>
-              </div>
-            )}
 
             {/* Actions */}
             <div className="flex gap-3 pt-4">

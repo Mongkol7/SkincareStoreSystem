@@ -16,12 +16,12 @@
         "productId": 3,
         "productName": "Sunscreen SPF 50",
         "quantity": 1,
-        "price": 22.00,
-        "subtotal": 22.00
+        "price": 22,
+        "subtotal": 22
       }
     ],
     "subtotal": 73.98,
-    "tax": 7.40,
+    "tax": 7.4,
     "discount": 0,
     "total": 81.38,
     "paymentMethod": "Cash",
@@ -38,16 +38,98 @@
         "productId": 2,
         "productName": "Hydrating Cleanser",
         "quantity": 1,
-        "price": 18.50,
-        "subtotal": 18.50
+        "price": 18.5,
+        "subtotal": 18.5
       }
     ],
-    "subtotal": 18.50,
+    "subtotal": 18.5,
     "tax": 1.85,
     "discount": 0,
     "total": 20.35,
     "paymentMethod": "Credit Card",
     "status": "Completed",
     "createdAt": "2025-01-01T11:15:00.000Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 1,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      },
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 1,
+        "sellingPrice": 18.5,
+        "discount": 12,
+        "price": 16.28
+      },
+      {
+        "productId": 3,
+        "name": "Sunscreen SPF 50",
+        "quantity": 2,
+        "sellingPrice": 22,
+        "discount": 12,
+        "price": 19.36
+      }
+    ],
+    "subtotal": 58.4,
+    "tax": 5.84,
+    "total": 64.24,
+    "paymentMethod": "Cash",
+    "amountReceived": 70,
+    "change": 3.5,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-003",
+    "cashier": "admin",
+    "date": "2026-01-04T11:22:47.225Z",
+    "id": 3,
+    "createdAt": "2026-01-04T11:22:47.226Z",
+    "updatedAt": "2026-01-04T11:22:47.226Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 1,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      },
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 1,
+        "sellingPrice": 18.5,
+        "discount": 12,
+        "price": 16.28
+      },
+      {
+        "productId": 3,
+        "name": "Sunscreen SPF 50",
+        "quantity": 2,
+        "sellingPrice": 22,
+        "discount": 12,
+        "price": 19.36
+      }
+    ],
+    "subtotal": 58.4,
+    "tax": 5.84,
+    "total": 64.24,
+    "paymentMethod": "Cash",
+    "amountReceived": 70,
+    "change": 3.5,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-004",
+    "cashier": "admin",
+    "date": "2026-01-04T11:31:55.448Z",
+    "id": 4,
+    "createdAt": "2026-01-04T11:31:55.449Z",
+    "updatedAt": "2026-01-04T11:31:55.449Z"
   }
 ]

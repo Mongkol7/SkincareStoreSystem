@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { usePO } from '../context/POContext';
+import { useProducts } from '../context/ProductContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import Card, { CardHeader } from '../components/common/Card';
@@ -14,6 +15,7 @@ import { MagnifyingGlassIcon, PlusIcon, CheckIcon, XMarkIcon } from '@heroicons/
 const PurchaseOrders = () => {
   const { user } = useAuth();
   const { openCreatePOModal, purchaseOrders, setPurchaseOrders, updatePurchaseOrder } = usePO();
+  const { products, updateProduct } = useProducts();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -22,15 +24,17 @@ const PurchaseOrders = () => {
 
 
 
-  // Filter purchase orders
+  // Filter and sort purchase orders (latest on top)
   const filteredPOs = useMemo(() => {
-    return purchaseOrders.filter(po => {
-      const matchesSearch =
-        po.poNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        po.supplier.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = filterStatus === 'all' || po.status === filterStatus;
-      return matchesSearch && matchesStatus;
-    });
+    return purchaseOrders
+      .filter(po => {
+        const matchesSearch =
+          po.poNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          po.supplier.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = filterStatus === 'all' || po.status === filterStatus;
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)); // Latest first
   }, [purchaseOrders, searchTerm, filterStatus]);
 
   // Handle view PO
@@ -79,13 +83,43 @@ const PurchaseOrders = () => {
   const handleMarkAsReceived = async (po) => {
     if (window.confirm(`Mark Purchase Order ${po.poNumber} as Received?\n\nThis confirms that all items have been received and added to inventory.`)) {
       try {
+        // Mark PO as received
         const updatedPO = await updatePurchaseOrder(po.id, { status: 'Received' });
+
+        // Auto-restock: Update product stock for each item in the PO
+        for (const item of po.itemsList) {
+          // Find product by name
+          const product = products.find(p => p.name === item.product);
+
+          if (product) {
+            // Calculate new stock
+            const newStock = product.stock + item.quantity;
+
+            // Determine new status based on stock levels
+            let newStatus = 'Active';
+            if (newStock <= 0) {
+              newStatus = 'Out of Stock';
+            } else if (newStock < product.min_stock) {
+              newStatus = 'Low Stock';
+            }
+
+            // Update product
+            await updateProduct({
+              ...product,
+              stock: newStock,
+              status: newStatus
+            });
+          }
+        }
+
         // Update modal if open
         if (selectedPO?.id === po.id) {
           setSelectedPO(updatedPO);
         }
-        alert(`✓ Purchase Order ${po.poNumber} has been marked as received!`);
+
+        alert(`✓ Purchase Order ${po.poNumber} has been marked as received!\n✓ Product stock has been updated automatically.`);
       } catch (error) {
+        console.error('Error marking PO as received:', error);
         alert('Failed to mark purchase order as received. Please try again.');
       }
     }
@@ -149,9 +183,12 @@ const PurchaseOrders = () => {
     },
     { field: 'date', label: 'Order Date' },
     {
-      field: 'items',
+      field: 'itemsList',
       label: 'Qty',
-      render: (value) => <span className="text-white/80">{value}</span>
+      render: (itemsList) => {
+        const totalQty = (itemsList || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
+        return <span className="text-white/80">{totalQty}</span>;
+      }
     },
     {
       field: 'totalAmount',

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { usePO } from '../context/POContext';
+import { useProducts } from '../context/ProductContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import StatsCard from '../components/common/StatsCard';
@@ -26,14 +27,59 @@ import {
   formatMonthlySalesForExport,
   formatCategoryDataForExport,
 } from '../utils/exportUtils';
+import api from '../services/api';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { openCreatePOModal, purchaseOrders } = usePO();
+  const { products } = useProducts();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('last7days');
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef(null);
+  const [transactions, setTransactions] = useState([]);
+  const [stats, setStats] = useState({
+    todaySales: 0,
+    transactions: 0,
+    activeStaff: 12,
+    lowStockItems: 0,
+  });
+
+  // Fetch transactions from backend
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const response = await api.get('/transactions');
+        setTransactions(response.data);
+
+        // Calculate today's sales
+        const today = new Date().toISOString().split('T')[0];
+        const todayTransactions = response.data.filter(t => {
+          const txnDate = new Date(t.date).toISOString().split('T')[0];
+          return txnDate === today && t.status === 'Completed';
+        });
+
+        const todaySales = todayTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
+
+        // Calculate low stock items
+        const lowStock = products.filter(p => p.stock < p.min_stock).length;
+
+        setStats({
+          todaySales: todaySales,
+          transactions: todayTransactions.length,
+          activeStaff: 12,
+          lowStockItems: lowStock,
+        });
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      }
+    };
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchTransactions();
+    }
+  }, [products]);
 
   // Close export menu when clicking outside
   useEffect(() => {
@@ -49,26 +95,50 @@ const AdminDashboard = () => {
     };
   }, []);
 
-  // Mock data
-  const stats = {
-    todaySales: 12450.50,
-    transactions: 89,
-    activeStaff: 12,
-    lowStockItems: 5,
-  };
+  // Get recent transactions (last 5, sorted by latest first)
+  const recentTransactions = transactions
+    .sort((a, b) => new Date(b.date) - new Date(a.date)) // Latest first
+    .slice(0, 5)
+    .map(t => ({
+      id: t.id,
+      invoice: t.transactionNumber,
+      cashier: t.cashier,
+      amount: t.total,
+      status: t.status,
+      time: new Date(t.date).toLocaleTimeString()
+    }));
 
-  const recentTransactions = [
-    { id: 1, invoice: 'INV-001', cashier: 'John Doe', amount: 150.00, status: 'Completed', time: '10:30 AM' },
-    { id: 2, invoice: 'INV-002', cashier: 'Jane Smith', amount: 250.50, status: 'Completed', time: '10:45 AM' },
-    { id: 3, invoice: 'INV-003', cashier: 'John Doe', amount: 89.99, status: 'Completed', time: '11:00 AM' },
-    { id: 4, invoice: 'INV-004', cashier: 'Mike Johnson', amount: 320.00, status: 'Refunded', time: '11:15 AM' },
-  ];
+  // Get low stock products
+  const lowStockProducts = products.filter(p => p.stock < p.min_stock).slice(0, 5);
 
-  const lowStockProducts = [
-    { id: 1, name: 'Vitamin C Serum', stock: 5, min_stock: 10, category: 'Serum' },
-    { id: 2, name: 'Hydrating Cleanser', stock: 3, min_stock: 15, category: 'Cleanser' },
-    { id: 3, name: 'Sunscreen SPF 50', stock: 8, min_stock: 20, category: 'Sunscreen' },
-  ];
+  // Calculate monthly sales from transactions
+  const monthlySalesData = React.useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+
+    // Get last 6 months
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthIndex = (currentMonth - i + 12) % 12;
+      const year = currentMonth - i < 0 ? currentYear - 1 : currentYear;
+      months.push({ month: monthNames[monthIndex], monthIndex, year });
+    }
+
+    return months.map(({ month, monthIndex, year }) => {
+      const monthTransactions = transactions.filter(t => {
+        const txnDate = new Date(t.date);
+        return txnDate.getMonth() === monthIndex &&
+               txnDate.getFullYear() === year &&
+               t.status === 'Completed';
+      });
+
+      const sales = monthTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
+      const target = sales > 0 ? sales * 0.85 : 40000; // Target is 85% of actual sales or base of 40k
+
+      return { month, sales, target };
+    });
+  }, [transactions]);
 
   // Analytics chart data
   const dailySalesData = [
@@ -79,15 +149,6 @@ const AdminDashboard = () => {
     { day: 'Fri', sales: 8900, transactions: 72 },
     { day: 'Sat', sales: 9500, transactions: 78 },
     { day: 'Sun', sales: 7100, transactions: 59 },
-  ];
-
-  const monthlySalesData = [
-    { month: 'Jan', sales: 45200, target: 40000 },
-    { month: 'Feb', sales: 48500, target: 42000 },
-    { month: 'Mar', sales: 52000, target: 45000 },
-    { month: 'Apr', sales: 49800, target: 45000 },
-    { month: 'May', sales: 55000, target: 48000 },
-    { month: 'Jun', sales: 58200, target: 50000 },
   ];
 
   const categoryData = [

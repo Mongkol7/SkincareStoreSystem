@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { usePO } from '../context/POContext';
+import { useProducts } from '../context/ProductContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
 import StatsCard from '../components/common/StatsCard';
@@ -21,6 +22,7 @@ import {
 const StockManagerDashboard = () => {
   const { user } = useAuth();
   const { openCreatePOModal, purchaseOrders, handleReorder: createReorderPO, updatePurchaseOrder } = usePO();
+  const { products, updateProduct } = useProducts();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isViewPOModalOpen, setIsViewPOModalOpen] = useState(false);
   const [selectedPO, setSelectedPO] = useState(null);
@@ -31,19 +33,18 @@ const StockManagerDashboard = () => {
     expectedDelivery: '',
   });
 
-  const stats = {
-    totalProducts: 156,
-    lowStock: 8,
-    pendingPO: 3,
-    receivedToday: 2,
-  };
+  // Get low stock products from real data
+  const lowStockProducts = products.filter(p => p.stock < p.min_stock);
 
-  const lowStockProducts = [
-    { id: 1, name: 'Vitamin C Serum', stock: 5, min_stock: 20, category: 'Serum', supplier: 'BeautySupply Co', price: 25.99 },
-    { id: 2, name: 'Hydrating Cleanser', stock: 3, min_stock: 15, category: 'Cleanser', supplier: 'SkinCare Inc', price: 18.50 },
-    { id: 3, name: 'Sunscreen SPF 50', stock: 8, min_stock: 25, category: 'Sunscreen', supplier: 'BeautySupply Co', price: 22.00 },
-    { id: 4, name: 'Face Mask Pack', stock: 12, min_stock: 30, category: 'Mask', supplier: 'Global Cosmetics', price: 15.99 },
-  ];
+  const stats = {
+    totalProducts: products.length,
+    lowStock: lowStockProducts.length,
+    pendingPO: purchaseOrders.filter(po => po.status === 'Pending').length,
+    receivedToday: purchaseOrders.filter(po => {
+      const today = new Date().toISOString().split('T')[0];
+      return po.status === 'Received' && po.date?.startsWith(today);
+    }).length,
+  };
 
   // Check if a product has pending orders
   const getProductOrderStatus = (productName) => {
@@ -160,10 +161,39 @@ const StockManagerDashboard = () => {
   const handleMarkAsReceived = async (po) => {
     if (window.confirm(`Mark Purchase Order ${po.poNumber} as Received?\n\nThis confirms that all items have been received and added to inventory.`)) {
       try {
+        // Mark PO as received
         await updatePurchaseOrder(po.id, { status: 'Received' });
-        alert(`✓ Purchase Order ${po.poNumber} has been marked as received!`);
+
+        // Auto-restock: Update product stock for each item in the PO
+        for (const item of po.itemsList) {
+          // Find product by name
+          const product = products.find(p => p.name === item.product);
+
+          if (product) {
+            // Calculate new stock
+            const newStock = product.stock + item.quantity;
+
+            // Determine new status based on stock levels
+            let newStatus = 'Active';
+            if (newStock <= 0) {
+              newStatus = 'Out of Stock';
+            } else if (newStock < product.min_stock) {
+              newStatus = 'Low Stock';
+            }
+
+            // Update product
+            await updateProduct({
+              ...product,
+              stock: newStock,
+              status: newStatus
+            });
+          }
+        }
+
+        alert(`✓ Purchase Order ${po.poNumber} has been marked as received!\n✓ Product stock has been updated automatically.`);
         // Refresh will happen automatically via POContext polling
       } catch (error) {
+        console.error('Error marking PO as received:', error);
         alert('Failed to mark purchase order as received. Please try again.');
       }
     }
