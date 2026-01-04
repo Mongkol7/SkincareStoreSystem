@@ -181,5 +181,471 @@
     "id": 6,
     "createdAt": "2026-01-04T12:31:46.755Z",
     "updatedAt": "2026-01-04T12:31:46.755Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 2,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      },
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 2,
+        "sellingPrice": 15,
+        "discount": 15,
+        "price": 12.75
+      },
+      {
+        "productId": 3,
+        "name": "Sunscreen SPF 50",
+        "quantity": 5,
+        "sellingPrice": 22,
+        "discount": 12,
+        "price": 19.36
+      }
+    ],
+    "subtotal": 129.1,
+    "tax": 12.91,
+    "total": 142.01,
+    "paymentMethod": "Cash",
+    "amountReceived": 150,
+    "change": 2,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-007",
+    "cashier": "cashier1",
+    "date": "2026-01-04T17:13:35.555Z",
+    "id": 7,
+    "createdAt": "2026-01-04T17:13:35.555Z",
+    "updatedAt": "2026-01-04T17:13:35.555Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 2,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      },
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 2,
+        "sellingPrice": 15,
+        "discount": 15,
+        "price": 12.75
+      },
+      {
+        "productId": 11,
+        "name": "Eye Cream Anti-Aging",
+        "quantity": 2,
+        "sellingPrice": 47,
+        "discount": 15,
+        "price": 39.949999999999996
+      },
+      {
+        "productId": 9,
+        "name": "Niacinamide Toner",
+        "quantity": 2,
+        "sellingPrice": 22.49,
+        "discount": 10,
+        "price": 20.241
+      }
+    ],
+    "subtotal": 152.682,
+    "tax": 15.2682,
+    "total": 167.9502,
+    "paymentMethod": "Cash",
+    "amountReceived": 180,
+    "change": 3.0200000000000102,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-008",
+    "cashier": "cashier1",
+    "date": "2026-01-04T17:17:34.389Z",
+    "id": 8,
+    "createdAt": "2026-01-04T17:17:34.415Z",
+    "updatedAt": "2026-01-04T17:17:34.415Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 1,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      },
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 1,
+        "sellingPrice": 15,
+        "discount": 15,
+        "price": 12.75
+      },
+      {
+        "productId": 3,
+        "name": "Sunscreen SPF 50",
+        "quantity": 1,
+        "sellingPrice": 22,
+        "discount": 12,
+        "price": 19.36
+      },
+      {
+        "productId": 7,
+        "name": "Gentle Exfoliating Scrub",
+        "quantity": 1,
+        "sellingPrice": 24.99,
+        "discount": 11,
+        "price": 22.2411
+      }
+    ],
+    "subtotal": 57.751099999999994,
+    "tax": 5.77511,
+    "total": 63.52620999999999,
+    "paymentMethod": "Cash",
+    "amountReceived": 70,
+    "change": 4.010000000000005,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-009",
+    "cashier": "cashier1",
+    "date": "2026-01-04T17:17:57.230Z",
+    "id": 9,
+    "createdAt": "2026-01-04T17:17:57.230Z",
+    "updatedAt": "2026-01-04T17:17:57.230Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 7,
+        "name": "Gentle Exfoliating Scrub",
+        "quantity": 1,
+        "sellingPrice": 24.99,
+        "discount": 11,
+        "price": 22.2411
+      },
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 1,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      },
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 1,
+        "sellingPrice": 15,
+        "discount": 15,
+        "price": 12.75
+      },
+      {
+        "productId": 4,
+        "name": "Face Mask Pack",
+        "quantity": 2,
+        "sellingPrice": 15.99,
+        "discount": 16,
+        "price": 13.4316
+      }
+    ],
+    "subtotal": 65.2543,
+    "tax": 6.52543,
+    "total": 71.77973,
+    "paymentMethod": "Cash",
+    "amountReceived": 80,
+    "change": 4.030000000000001,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-010",
+    "cashier": "cashier1",
+    "date": "2026-01-04T17:18:07.672Z",
+    "id": 10,
+    "createdAt": "2026-01-04T17:18:07.673Z",
+    "updatedAt": "2026-01-04T17:18:07.673Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 1,
+        "sellingPrice": 15,
+        "discount": 15,
+        "price": 12.75
+      },
+      {
+        "productId": 3,
+        "name": "Sunscreen SPF 50",
+        "quantity": 1,
+        "sellingPrice": 22,
+        "discount": 12,
+        "price": 19.36
+      },
+      {
+        "productId": 9,
+        "name": "Niacinamide Toner",
+        "quantity": 1,
+        "sellingPrice": 22.49,
+        "discount": 10,
+        "price": 20.241
+      },
+      {
+        "productId": 8,
+        "name": "Hyaluronic Acid Serum",
+        "quantity": 1,
+        "sellingPrice": 38.99,
+        "discount": 9,
+        "price": 35.480900000000005
+      }
+    ],
+    "subtotal": 87.8319,
+    "tax": 8.783190000000001,
+    "total": 96.61509000000001,
+    "paymentMethod": "Cash",
+    "amountReceived": 100,
+    "change": 1.5200000000000102,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-011",
+    "cashier": "cashier1",
+    "date": "2026-01-04T17:18:16.376Z",
+    "id": 11,
+    "createdAt": "2026-01-04T17:18:16.376Z",
+    "updatedAt": "2026-01-04T17:18:16.376Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 1,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      },
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 1,
+        "sellingPrice": 15,
+        "discount": 15,
+        "price": 12.75
+      },
+      {
+        "productId": 3,
+        "name": "Sunscreen SPF 50",
+        "quantity": 1,
+        "sellingPrice": 22,
+        "discount": 12,
+        "price": 19.36
+      }
+    ],
+    "subtotal": 35.51,
+    "tax": 3.551,
+    "total": 39.061,
+    "paymentMethod": "Cash",
+    "amountReceived": 50,
+    "change": 9,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-012",
+    "cashier": "cashier1",
+    "date": "2026-01-04T17:26:06.736Z",
+    "id": 12,
+    "createdAt": "2026-01-04T17:26:06.737Z",
+    "updatedAt": "2026-01-04T17:26:06.737Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 1,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      },
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 1,
+        "sellingPrice": 15,
+        "discount": 15,
+        "price": 12.75
+      },
+      {
+        "productId": 3,
+        "name": "Sunscreen SPF 50",
+        "quantity": 1,
+        "sellingPrice": 22,
+        "discount": 12,
+        "price": 19.36
+      },
+      {
+        "productId": 6,
+        "name": "Retinol Night Cream",
+        "quantity": 2,
+        "sellingPrice": 68,
+        "discount": 13,
+        "price": 59.16
+      }
+    ],
+    "subtotal": 153.82999999999998,
+    "tax": 15.383,
+    "total": 169.213,
+    "paymentMethod": "Cash",
+    "amountReceived": 200,
+    "change": 23,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-013",
+    "cashier": "cashier1",
+    "date": "2026-01-04T17:37:23.519Z",
+    "id": 13,
+    "createdAt": "2026-01-04T17:37:23.519Z",
+    "updatedAt": "2026-01-04T17:37:23.519Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 1,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      },
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 1,
+        "sellingPrice": 15,
+        "discount": 15,
+        "price": 12.75
+      },
+      {
+        "productId": 3,
+        "name": "Sunscreen SPF 50",
+        "quantity": 1,
+        "sellingPrice": 22,
+        "discount": 12,
+        "price": 19.36
+      },
+      {
+        "productId": 5,
+        "name": "Moisturizing Cream",
+        "quantity": 2,
+        "sellingPrice": 28.99,
+        "discount": 12,
+        "price": 25.5112
+      }
+    ],
+    "subtotal": 86.5324,
+    "tax": 8.65324,
+    "total": 95.18563999999999,
+    "paymentMethod": "Cash",
+    "amountReceived": 100,
+    "change": 1.0200000000000102,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-014",
+    "cashier": "cashier1",
+    "date": "2026-01-04T17:37:47.424Z",
+    "id": 14,
+    "createdAt": "2026-01-04T17:37:47.425Z",
+    "updatedAt": "2026-01-04T17:37:47.425Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 1,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      },
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 1,
+        "sellingPrice": 15,
+        "discount": 15,
+        "price": 12.75
+      },
+      {
+        "productId": 3,
+        "name": "Sunscreen SPF 50",
+        "quantity": 1,
+        "sellingPrice": 22,
+        "discount": 12,
+        "price": 19.36
+      },
+      {
+        "productId": 5,
+        "name": "Moisturizing Cream",
+        "quantity": 2,
+        "sellingPrice": 28.99,
+        "discount": 12,
+        "price": 25.5112
+      }
+    ],
+    "subtotal": 86.5324,
+    "tax": 8.65324,
+    "total": 95.18563999999999,
+    "paymentMethod": "Cash",
+    "amountReceived": 100,
+    "change": 1.0200000000000102,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-015",
+    "cashier": "cashier1",
+    "date": "2026-01-04T17:48:35.781Z",
+    "id": 15,
+    "createdAt": "2026-01-04T17:48:35.782Z",
+    "updatedAt": "2026-01-04T17:48:35.782Z"
+  },
+  {
+    "items": [
+      {
+        "productId": 1,
+        "name": "Vitamin C Serum",
+        "quantity": 5,
+        "sellingPrice": 4,
+        "discount": 15,
+        "price": 3.4
+      },
+      {
+        "productId": 2,
+        "name": "Hydrating Cleanser",
+        "quantity": 5,
+        "sellingPrice": 15,
+        "discount": 15,
+        "price": 12.75
+      },
+      {
+        "productId": 3,
+        "name": "Sunscreen SPF 50",
+        "quantity": 5,
+        "sellingPrice": 22,
+        "discount": 12,
+        "price": 19.36
+      }
+    ],
+    "subtotal": 177.55,
+    "tax": 17.755000000000003,
+    "total": 195.305,
+    "paymentMethod": "Cash",
+    "amountReceived": 210,
+    "change": 5,
+    "status": "Completed",
+    "transactionNumber": "TXN-2025-016",
+    "cashier": "cashier1",
+    "date": "2026-01-04T17:48:50.515Z",
+    "id": 16,
+    "createdAt": "2026-01-04T17:48:50.516Z",
+    "updatedAt": "2026-01-04T17:48:50.516Z"
   }
 ]

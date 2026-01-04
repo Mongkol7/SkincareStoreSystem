@@ -12,7 +12,10 @@ const CloseBatch = () => {
   const [closingCash, setClosingCash] = useState('');
   const [remarks, setRemarks] = useState('');
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [showWarning, setShowWarning] = useState(false);
+  const [currentBatch, setCurrentBatch] = useState(null);
+  const [transactions, setTransactions] = useState([]);
 
   // Auto-detect shift based on current time
   const getShiftType = () => {
@@ -20,22 +23,114 @@ const CloseBatch = () => {
     return hour < 16 ? 'Morning' : 'Afternoon'; // Before 4 PM = Morning, After = Afternoon
   };
 
-  // Mock batch data
-  const batchData = {
-    batch_code: 'BTH-20231228-001',
-    opening_date: new Date().toISOString(),
-    shift_type: getShiftType(),
-    opening_cash: 500.00,
-    total_sales: 2450.50,
-    cash_sales: 1850.30,
-    card_sales: 600.20,
-    transaction_count: 15,
+  // Load batch and transaction data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const batchId = localStorage.getItem('currentBatchId');
+
+        if (!batchId) {
+          alert('No active batch found. Please open a new batch first.');
+          navigate('/cashier/open-batch');
+          return;
+        }
+
+        // Load current batch and all transactions
+        const [batchResponse, transactionsResponse] = await Promise.all([
+          api.get(`/batches/${batchId}`),
+          api.get('/transactions')
+        ]);
+
+        setCurrentBatch(batchResponse.data);
+        setTransactions(transactionsResponse.data);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        alert('Failed to load batch data. Please try again.');
+        navigate('/cashier/dashboard');
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    loadData();
+  }, [navigate]);
+
+  // Calculate sales from transactions that occurred during this batch
+  const calculateBatchSales = () => {
+    if (!currentBatch || !transactions.length) {
+      return {
+        totalSales: 0,
+        cashSales: 0,
+        cardSales: 0,
+        transactionCount: 0
+      };
+    }
+
+    const batchOpenTime = new Date(currentBatch.openTime);
+
+    // Filter transactions that occurred after batch was opened and are completed
+    const batchTransactions = transactions.filter(t => {
+      const txnDate = new Date(t.date);
+      return txnDate >= batchOpenTime && t.status === 'Completed';
+    });
+
+    const totalSales = batchTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
+    const cashSales = batchTransactions
+      .filter(t => t.paymentMethod === 'Cash')
+      .reduce((sum, t) => sum + (t.total || 0), 0);
+    const cardSales = batchTransactions
+      .filter(t => t.paymentMethod === 'Card')
+      .reduce((sum, t) => sum + (t.total || 0), 0);
+
+    return {
+      totalSales: Math.round(totalSales * 100) / 100,
+      cashSales: Math.round(cashSales * 100) / 100,
+      cardSales: Math.round(cardSales * 100) / 100,
+      transactionCount: batchTransactions.length
+    };
   };
 
-  const expectedCash = batchData.opening_cash + batchData.cash_sales;
+  const salesData = calculateBatchSales();
+
+  const batchData = currentBatch ? {
+    batch_code: currentBatch.batchNumber,
+    opening_date: currentBatch.openTime,
+    shift_type: getShiftType(),
+    opening_cash: currentBatch.openingCash || 0,
+    total_sales: salesData.totalSales,
+    cash_sales: salesData.cashSales,
+    card_sales: salesData.cardSales,
+    transaction_count: salesData.transactionCount,
+  } : null;
+
+  const expectedCash = batchData ? batchData.opening_cash + batchData.cash_sales : 0;
   const actualCash = parseFloat(closingCash) || 0;
   const difference = actualCash - expectedCash;
   const hasDifference = closingCash && Math.abs(difference) >= 0.01;
+
+  if (dataLoading) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <Card>
+          <div className="p-8 text-center">
+            <div className="text-white/60">Loading batch data...</div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!batchData) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <Card>
+          <div className="p-8 text-center">
+            <div className="text-white/60">No active batch found.</div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,15 +144,34 @@ const CloseBatch = () => {
     setLoading(true);
 
     try {
+      // Get batch ID from localStorage
+      const batchId = localStorage.getItem('currentBatchId');
+
+      if (!batchId) {
+        alert('No active batch found. Please open a new batch first.');
+        navigate('/cashier/open-batch');
+        return;
+      }
+
+      // Get receipts from Sales page (if any were saved in localStorage during this batch)
+      const receiptsKey = `batch_${batchId}_receipts`;
+      const savedReceipts = localStorage.getItem(receiptsKey);
+      const receipts = savedReceipts ? JSON.parse(savedReceipts) : [];
+
       // Close batch via API
-      await api.put(`/batches/${batchData.id || 1}/close`, {
+      await api.put(`/batches/${batchId}/close`, {
         closingCash: parseFloat(closingCash),
         remarks,
-        totalSales: batchData.total_sales,
-        cashSales: batchData.cash_sales,
-        cardSales: batchData.card_sales,
-        transactions: batchData.transaction_count
+        totalSales: salesData.totalSales,
+        cashSales: salesData.cashSales,
+        cardSales: salesData.cardSales,
+        transactions: salesData.transactionCount,
+        receipts: receipts
       });
+
+      // Clear the current batch ID and receipts
+      localStorage.removeItem('currentBatchId');
+      localStorage.removeItem(receiptsKey);
 
       alert('✓ Batch closed successfully!');
       navigate('/cashier/dashboard');
@@ -125,12 +239,6 @@ const CloseBatch = () => {
               <span className="text-sm text-white/80">Cash Sales:</span>
               <span className="text-sm font-semibold text-success-400">
                 +${batchData.cash_sales.toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between p-4 bg-white/5 rounded-xl">
-              <span className="text-sm text-white/80">Card Sales:</span>
-              <span className="text-sm font-semibold text-primary-400">
-                ${batchData.card_sales.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between p-4 bg-primary-500/20 border border-primary-500/30 rounded-xl">

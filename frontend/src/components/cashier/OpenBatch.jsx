@@ -10,6 +10,7 @@ import api from '../../services/api';
 
 const OpenBatch = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     opening_cash: '',
     shift_type: '',
@@ -57,17 +58,21 @@ const OpenBatch = () => {
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      // await batchService.openBatch(formData);
+      // Create new batch via API
+      const response = await api.post('/batches', {
+        openingCash: parseFloat(formData.opening_cash),
+        cashier: user?.name || 'Unknown'
+      });
 
-      // Mock API call
-      setTimeout(() => {
-        setLoading(false);
-        navigate('/cashier/dashboard');
-      }, 1000);
+      // Store batch ID in localStorage for later closing
+      localStorage.setItem('currentBatchId', response.data.id);
+
+      alert('✓ Batch opened successfully!');
+      navigate('/cashier/dashboard');
     } catch (error) {
       setLoading(false);
       console.error('Error opening batch:', error);
+      alert('Failed to open batch. Please try again.');
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/common/Navbar';
 import Sidebar from '../components/common/Sidebar';
@@ -11,16 +11,52 @@ import {
   CheckCircleIcon,
   CurrencyDollarIcon,
 } from '@heroicons/react/24/outline';
+import api from '../services/api';
 
 const Batches = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState(null);
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [isReceiptDetailOpen, setIsReceiptDetailOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState('all'); // 'all', 'week', 'month'
+  const [batches, setBatches] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock batch data
-  const batches = [
+  // Load batches from backend
+  useEffect(() => {
+    loadBatches();
+  }, []);
+
+  const loadBatches = async () => {
+    try {
+      const response = await api.get('/batches');
+      setBatches(response.data);
+    } catch (error) {
+      console.error('Error loading batches:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Format batch data for display
+  const formattedBatches = batches.map(b => ({
+    id: b.id,
+    batchNumber: b.batchNumber,
+    date: new Date(b.date).toLocaleDateString(),
+    openTime: b.openTime ? new Date(b.openTime).toLocaleTimeString() : '-',
+    closeTime: b.closeTime ? new Date(b.closeTime).toLocaleTimeString() : '-',
+    openingCash: b.openingCash || 0,
+    closingCash: b.closingCash || 0,
+    totalSales: b.totalSales || 0,
+    transactions: b.transactions || 0,
+    status: b.status,
+    cashier: b.cashier || 'Unknown'
+  }));
+
+  // Mock fallback data if backend fails
+  const mockBatches = formattedBatches.length > 0 ? formattedBatches : [
     {
       id: 1,
       batchNumber: 'BATCH-001',
@@ -145,30 +181,33 @@ const Batches = () => {
   // Filter batches based on date
   const filterBatchesByDate = () => {
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
 
     if (dateFilter === 'all') {
-      return batches;
+      return formattedBatches;
     }
 
     if (dateFilter === 'week') {
       // Get the start of the week (Sunday)
       const startOfWeek = new Date(today);
       startOfWeek.setDate(today.getDate() - today.getDay());
-      const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
 
-      return batches.filter(batch => batch.date >= startOfWeekStr);
+      return formattedBatches.filter(batch => {
+        const batchDate = new Date(batch.date);
+        return batchDate >= startOfWeek;
+      });
     }
 
     if (dateFilter === 'month') {
       // Get the start of the month
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
 
-      return batches.filter(batch => batch.date >= startOfMonthStr);
+      return formattedBatches.filter(batch => {
+        const batchDate = new Date(batch.date);
+        return batchDate >= startOfMonth;
+      });
     }
 
-    return batches;
+    return formattedBatches;
   };
 
   const filteredBatches = filterBatchesByDate();
@@ -360,8 +399,92 @@ const Batches = () => {
               </div>
             </div>
 
+            {/* Receipts Section */}
+            {selectedBatch.receipts && selectedBatch.receipts.length > 0 && (
+              <div className="glass-card p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Receipts ({selectedBatch.receipts.length})</h3>
+                <div className="space-y-2">
+                  {selectedBatch.receipts.map((receipt, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-white">{receipt.id}</p>
+                        <p className="text-xs text-white/60">
+                          {new Date(receipt.date).toLocaleString()} • {receipt.items} items • ${receipt.total.toFixed(2)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedReceipt(receipt);
+                          setIsReceiptDetailOpen(true);
+                        }}
+                      >
+                        View
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-3 justify-end pt-4">
               <Button variant="secondary" onClick={() => setIsViewModalOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Receipt Detail Modal */}
+      <Modal
+        isOpen={isReceiptDetailOpen}
+        onClose={() => setIsReceiptDetailOpen(false)}
+        title="Receipt Details"
+        size="md"
+      >
+        {selectedReceipt && (
+          <div className="space-y-4">
+            <div className="text-center border-b border-white/10 pb-4">
+              <h3 className="text-lg font-bold text-white">{selectedReceipt.id}</h3>
+              <p className="text-sm text-white/60">{new Date(selectedReceipt.date).toLocaleString()}</p>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-white/80">Items:</p>
+              {selectedReceipt.cartItems && selectedReceipt.cartItems.map((item, index) => (
+                <div key={index} className="flex justify-between p-2 bg-white/5 rounded">
+                  <div className="flex-1">
+                    <p className="text-sm text-white">{item.name}</p>
+                    <p className="text-xs text-white/60">Qty: {item.quantity} × ${item.price.toFixed(2)}</p>
+                  </div>
+                  <p className="text-sm font-medium text-white">${(item.quantity * item.price).toFixed(2)}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-white/10 pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-white/80">Subtotal:</span>
+                <span className="text-white font-medium">${selectedReceipt.total.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-white/80">Payment Method:</span>
+                <span className="text-white font-medium">{selectedReceipt.payment}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-white/80">Money Received:</span>
+                <span className="text-white font-medium">${selectedReceipt.moneyReceived.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t border-white/10 pt-2">
+                <span className="text-white">Change:</span>
+                <span className="text-success-400">${selectedReceipt.change.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4">
+              <Button variant="secondary" onClick={() => setIsReceiptDetailOpen(false)}>
                 Close
               </Button>
             </div>

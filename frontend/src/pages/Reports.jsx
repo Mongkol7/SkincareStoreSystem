@@ -28,11 +28,15 @@ import {
   formatMonthlySalesForExport,
   formatCategoryDataForExport,
 } from '../utils/exportUtils';
+import api from '../services/api';
 
 const Reports = () => {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('last30days');
+  const [transactions, setTransactions] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Export menu states
   const [showSalesExportMenu, setShowSalesExportMenu] = useState(false);
@@ -47,32 +51,111 @@ const Reports = () => {
   const analyticsExportMenuRef = useRef(null);
   const analyticsExportButtonRef = useRef(null);
 
-  // Mock data for charts
-  const dailySalesData = [
-    { day: 'Mon', sales: 5200, transactions: 42 },
-    { day: 'Tue', sales: 6800, transactions: 55 },
-    { day: 'Wed', sales: 4500, transactions: 38 },
-    { day: 'Thu', sales: 7200, transactions: 61 },
-    { day: 'Fri', sales: 8900, transactions: 72 },
-    { day: 'Sat', sales: 9500, transactions: 78 },
-    { day: 'Sun', sales: 7100, transactions: 59 },
-  ];
+  // Load transactions and products from backend
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [txnResponse, prodResponse] = await Promise.all([
+          api.get('/transactions'),
+          api.get('/products')
+        ]);
+        setTransactions(txnResponse.data);
+        setProducts(prodResponse.data);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
-  const monthlySalesData = [
-    { month: 'Jan', sales: 45200, target: 40000 },
-    { month: 'Feb', sales: 48500, target: 42000 },
-    { month: 'Mar', sales: 52000, target: 45000 },
-    { month: 'Apr', sales: 49800, target: 45000 },
-    { month: 'May', sales: 55000, target: 48000 },
-    { month: 'Jun', sales: 58200, target: 50000 },
-  ];
+  // Calculate daily sales from real transactions (last 7 days)
+  const dailySalesData = useMemo(() => {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    const last7Days = [];
 
-  const categoryData = [
-    { category: 'Serums', sales: 15200, percentage: 34 },
-    { category: 'Moisturizers', sales: 12800, percentage: 28 },
-    { category: 'Sunscreens', sales: 9500, percentage: 21 },
-    { category: 'Cleansers', sales: 7700, percentage: 17 },
-  ];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+
+      const dayTransactions = transactions.filter(t => {
+        const txnDate = new Date(t.date).toISOString().split('T')[0];
+        return txnDate === dateStr && t.status === 'Completed';
+      });
+
+      const sales = dayTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
+
+      last7Days.push({
+        day: dayNames[date.getDay()],
+        sales: Math.round(sales * 100) / 100,
+        transactions: dayTransactions.length
+      });
+    }
+
+    return last7Days;
+  }, [transactions]);
+
+  // Calculate monthly sales from real transactions (last 6 months)
+  const monthlySalesData = useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthIndex = (currentMonth - i + 12) % 12;
+      const year = currentMonth - i < 0 ? currentYear - 1 : currentYear;
+      months.push({ month: monthNames[monthIndex], monthIndex, year });
+    }
+
+    return months.map(({ month, monthIndex, year }) => {
+      const monthTransactions = transactions.filter(t => {
+        const txnDate = new Date(t.date);
+        return txnDate.getMonth() === monthIndex &&
+               txnDate.getFullYear() === year &&
+               t.status === 'Completed';
+      });
+
+      const sales = monthTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
+      const target = sales > 0 ? Math.round(sales * 0.85) : 40000;
+
+      return { month, sales: Math.round(sales * 100) / 100, target };
+    });
+  }, [transactions]);
+
+  // Calculate category sales from real transactions
+  const categoryData = useMemo(() => {
+    const categorySales = {};
+
+    transactions.forEach(t => {
+      if (t.status === 'Completed' && t.items) {
+        t.items.forEach(item => {
+          const product = products.find(p => p.name === item.name);
+          const category = product?.category || 'Other';
+          const itemTotal = (item.price || 0) * (item.quantity || 0);
+
+          if (!categorySales[category]) {
+            categorySales[category] = 0;
+          }
+          categorySales[category] += itemTotal;
+        });
+      }
+    });
+
+    const totalSales = Object.values(categorySales).reduce((sum, val) => sum + val, 0);
+
+    return Object.entries(categorySales)
+      .map(([category, sales]) => ({
+        category,
+        sales: Math.round(sales * 100) / 100,
+        percentage: totalSales > 0 ? Math.round((sales / totalSales) * 100) : 0
+      }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 4);
+  }, [transactions, products]);
 
   const salesData = [
     { id: 1, period: 'January 2025', sales: 45200, transactions: 342, avgSale: 132.16, growth: '+12%' },
@@ -89,9 +172,43 @@ const Reports = () => {
   ];
 
   // Calculate max values for scaling
-  const maxDailySales = Math.max(...dailySalesData.map(d => d.sales));
-  const maxMonthlySales = Math.max(...monthlySalesData.map(d => Math.max(d.sales, d.target)));
+  const maxDailySales = Math.max(...dailySalesData.map(d => d.sales), 1);
+  const maxMonthlySales = Math.max(...monthlySalesData.map(d => Math.max(d.sales, d.target)), 1);
   const totalCategorySales = categoryData.reduce((sum, cat) => sum + cat.sales, 0);
+
+  // Calculate Month-to-Date stats from real transactions
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const mtdTransactions = transactions.filter(t => {
+    const txnDate = new Date(t.date);
+    return txnDate.getMonth() === currentMonth &&
+           txnDate.getFullYear() === currentYear &&
+           t.status === 'Completed';
+  });
+
+  const mtdRevenue = mtdTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
+  const mtdTransactionCount = mtdTransactions.length;
+  const avgTransaction = mtdTransactionCount > 0 ? mtdRevenue / mtdTransactionCount : 0;
+
+  // Calculate best-selling product from transactions
+  const productSales = {};
+  transactions.forEach(t => {
+    if (t.status === 'Completed' && t.items) {
+      t.items.forEach(item => {
+        if (!productSales[item.name]) {
+          productSales[item.name] = 0;
+        }
+        productSales[item.name] += item.quantity || 0;
+      });
+    }
+  });
+
+  const bestSeller = Object.entries(productSales).length > 0
+    ? Object.entries(productSales).reduce((max, [name, qty]) =>
+        qty > max.qty ? { name, qty } : max,
+        { name: 'N/A', qty: 0 }
+      ).name
+    : 'N/A';
 
   // Close export menus when clicking outside
   useEffect(() => {
@@ -457,7 +574,9 @@ const Reports = () => {
                   <span className="text-sm text-white/60">Avg. Daily Sales</span>
                   <ArrowTrendingUpIcon className="w-5 h-5 text-white/60" />
                 </div>
-                <div className="text-3xl font-bold text-white">${(dailySalesData.reduce((sum, d) => sum + d.sales, 0) / dailySalesData.length / 1000).toFixed(1)}k</div>
+                <div className="text-3xl font-bold text-white">
+                  ${dailySalesData.length > 0 ? (dailySalesData.reduce((sum, d) => sum + d.sales, 0) / dailySalesData.length / 1000).toFixed(1) : '0.0'}k
+                </div>
                 <div className="text-xs text-white/60">Last 7 days average</div>
               </div>
             </Card>
@@ -469,10 +588,14 @@ const Reports = () => {
                   <ChartBarIcon className="w-5 h-5 text-white/60" />
                 </div>
                 <div className="text-3xl font-bold text-white">
-                  {dailySalesData.reduce((max, d) => d.sales > max.sales ? d : max, dailySalesData[0]).day}
+                  {dailySalesData.length > 0
+                    ? dailySalesData.reduce((max, d) => d.sales > max.sales ? d : max, dailySalesData[0]).day
+                    : 'N/A'}
                 </div>
                 <div className="text-xs text-white/60">
-                  ${dailySalesData.reduce((max, d) => d.sales > max.sales ? d : max, dailySalesData[0]).sales.toLocaleString()} in sales
+                  {dailySalesData.length > 0
+                    ? `$${dailySalesData.reduce((max, d) => d.sales > max.sales ? d : max, dailySalesData[0]).sales.toLocaleString()} in sales`
+                    : 'No data available'}
                 </div>
               </div>
             </Card>
@@ -484,7 +607,9 @@ const Reports = () => {
                   <CurrencyDollarIcon className="w-5 h-5 text-white/60" />
                 </div>
                 <div className="text-3xl font-bold text-white">
-                  {((monthlySalesData.reduce((sum, d) => sum + d.sales, 0) / monthlySalesData.reduce((sum, d) => sum + d.target, 0)) * 100).toFixed(0)}%
+                  {monthlySalesData.length > 0 && monthlySalesData.reduce((sum, d) => sum + d.target, 0) > 0
+                    ? ((monthlySalesData.reduce((sum, d) => sum + d.sales, 0) / monthlySalesData.reduce((sum, d) => sum + d.target, 0)) * 100).toFixed(0)
+                    : '0'}%
                 </div>
                 <div className="text-xs text-white/60">6-month average vs target</div>
               </div>
@@ -521,28 +646,22 @@ const Reports = () => {
               <StatsCard
                 icon={<CurrencyDollarIcon className="w-6 h-6 text-white" />}
                 label="Total Revenue (MTD)"
-                value="$45,200"
-                trend="up"
-                trendValue="12%"
+                value={`$${mtdRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               />
               <StatsCard
                 icon={<ShoppingCartIcon className="w-6 h-6 text-white" />}
                 label="Transactions (MTD)"
-                value="342"
-                trend="up"
-                trendValue="8%"
+                value={mtdTransactionCount}
               />
               <StatsCard
                 icon={<ChartBarIcon className="w-6 h-6 text-white" />}
                 label="Avg. Transaction"
-                value="$132.16"
-                trend="up"
-                trendValue="5%"
+                value={`$${avgTransaction.toFixed(2)}`}
               />
               <StatsCard
                 icon={<ShoppingCartIcon className="w-6 h-6 text-white" />}
                 label="Best Seller"
-                value="Vitamin C Serum"
+                value={bestSeller}
               />
             </div>
 

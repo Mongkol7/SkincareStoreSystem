@@ -25,6 +25,14 @@ export const POProvider = ({ children }) => {
       return;
     }
 
+    // Only fetch POs if user is Admin or Stock Manager
+    const userRole = user?.roles?.[0]?.name;
+    if (userRole !== 'Admin' && userRole !== 'Stock Manager') {
+      setLoading(false);
+      setPurchaseOrders([]);
+      return;
+    }
+
     try {
       const response = await axios.get(`${API_URL}/purchase-orders`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -99,7 +107,7 @@ export const POProvider = ({ children }) => {
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [token]);
+  }, [token, user]);
 
   const openCreatePOModal = (items = null) => {
     if (items) {

@@ -111,6 +111,34 @@ const AdminDashboard = () => {
   // Get low stock products
   const lowStockProducts = products.filter(p => p.stock < p.min_stock).slice(0, 5);
 
+  // Calculate daily sales from real transactions (last 7 days)
+  const dailySalesData = React.useMemo(() => {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    const last7Days = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+
+      const dayTransactions = transactions.filter(t => {
+        const txnDate = new Date(t.date).toISOString().split('T')[0];
+        return txnDate === dateStr && t.status === 'Completed';
+      });
+
+      const sales = dayTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
+
+      last7Days.push({
+        day: dayNames[date.getDay()],
+        sales: Math.round(sales * 100) / 100,
+        transactions: dayTransactions.length
+      });
+    }
+
+    return last7Days;
+  }, [transactions]);
+
   // Calculate monthly sales from transactions
   const monthlySalesData = React.useMemo(() => {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -134,33 +162,46 @@ const AdminDashboard = () => {
       });
 
       const sales = monthTransactions.reduce((sum, t) => sum + (t.total || 0), 0);
-      const target = sales > 0 ? sales * 0.85 : 40000; // Target is 85% of actual sales or base of 40k
+      const target = sales > 0 ? Math.round(sales * 0.85) : 40000;
 
-      return { month, sales, target };
+      return { month, sales: Math.round(sales * 100) / 100, target };
     });
   }, [transactions]);
 
-  // Analytics chart data
-  const dailySalesData = [
-    { day: 'Mon', sales: 5200, transactions: 42 },
-    { day: 'Tue', sales: 6800, transactions: 55 },
-    { day: 'Wed', sales: 4500, transactions: 38 },
-    { day: 'Thu', sales: 7200, transactions: 61 },
-    { day: 'Fri', sales: 8900, transactions: 72 },
-    { day: 'Sat', sales: 9500, transactions: 78 },
-    { day: 'Sun', sales: 7100, transactions: 59 },
-  ];
+  // Calculate category sales from real transactions
+  const categoryData = React.useMemo(() => {
+    const categorySales = {};
 
-  const categoryData = [
-    { category: 'Serums', sales: 15200, percentage: 34 },
-    { category: 'Moisturizers', sales: 12800, percentage: 28 },
-    { category: 'Sunscreens', sales: 9500, percentage: 21 },
-    { category: 'Cleansers', sales: 7700, percentage: 17 },
-  ];
+    transactions.forEach(t => {
+      if (t.status === 'Completed' && t.items) {
+        t.items.forEach(item => {
+          const product = products.find(p => p.name === item.name);
+          const category = product?.category || 'Other';
+          const itemTotal = (item.price || 0) * (item.quantity || 0);
+
+          if (!categorySales[category]) {
+            categorySales[category] = 0;
+          }
+          categorySales[category] += itemTotal;
+        });
+      }
+    });
+
+    const totalSales = Object.values(categorySales).reduce((sum, val) => sum + val, 0);
+
+    return Object.entries(categorySales)
+      .map(([category, sales]) => ({
+        category,
+        sales: Math.round(sales * 100) / 100,
+        percentage: totalSales > 0 ? Math.round((sales / totalSales) * 100) : 0
+      }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 4);
+  }, [transactions, products]);
 
   // Calculate max values for scaling
-  const maxDailySales = Math.max(...dailySalesData.map(d => d.sales));
-  const maxMonthlySales = Math.max(...monthlySalesData.map(d => Math.max(d.sales, d.target)));
+  const maxDailySales = Math.max(...dailySalesData.map(d => d.sales), 1);
+  const maxMonthlySales = Math.max(...monthlySalesData.map(d => Math.max(d.sales, d.target)), 1);
   const totalCategorySales = categoryData.reduce((sum, cat) => sum + cat.sales, 0);
 
   const transactionColumns = [
@@ -633,7 +674,9 @@ const AdminDashboard = () => {
                   <span className="text-sm text-white/60">Avg. Daily Sales</span>
                   <ArrowTrendingUpIcon className="w-5 h-5 text-white/60" />
                 </div>
-                <div className="text-3xl font-bold text-white">${(dailySalesData.reduce((sum, d) => sum + d.sales, 0) / dailySalesData.length / 1000).toFixed(1)}k</div>
+                <div className="text-3xl font-bold text-white">
+                  ${dailySalesData.length > 0 ? (dailySalesData.reduce((sum, d) => sum + d.sales, 0) / dailySalesData.length / 1000).toFixed(1) : '0.0'}k
+                </div>
                 <div className="text-xs text-white/60">Last 7 days average</div>
               </div>
             </Card>
@@ -645,10 +688,14 @@ const AdminDashboard = () => {
                   <ChartBarIcon className="w-5 h-5 text-white/60" />
                 </div>
                 <div className="text-3xl font-bold text-white">
-                  {dailySalesData.reduce((max, d) => d.sales > max.sales ? d : max, dailySalesData[0]).day}
+                  {dailySalesData.length > 0
+                    ? dailySalesData.reduce((max, d) => d.sales > max.sales ? d : max, dailySalesData[0]).day
+                    : 'N/A'}
                 </div>
                 <div className="text-xs text-white/60">
-                  ${dailySalesData.reduce((max, d) => d.sales > max.sales ? d : max, dailySalesData[0]).sales.toLocaleString()} in sales
+                  {dailySalesData.length > 0
+                    ? `$${dailySalesData.reduce((max, d) => d.sales > max.sales ? d : max, dailySalesData[0]).sales.toLocaleString()} in sales`
+                    : 'No data available'}
                 </div>
               </div>
             </Card>
@@ -660,7 +707,9 @@ const AdminDashboard = () => {
                   <CurrencyDollarIcon className="w-5 h-5 text-white/60" />
                 </div>
                 <div className="text-3xl font-bold text-white">
-                  {((monthlySalesData.reduce((sum, d) => sum + d.sales, 0) / monthlySalesData.reduce((sum, d) => sum + d.target, 0)) * 100).toFixed(0)}%
+                  {monthlySalesData.length > 0 && monthlySalesData.reduce((sum, d) => sum + d.target, 0) > 0
+                    ? ((monthlySalesData.reduce((sum, d) => sum + d.sales, 0) / monthlySalesData.reduce((sum, d) => sum + d.target, 0)) * 100).toFixed(0)
+                    : '0'}%
                 </div>
                 <div className="text-xs text-white/60">6-month average vs target</div>
               </div>

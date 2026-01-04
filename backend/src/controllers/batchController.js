@@ -1,8 +1,6 @@
 const FileStorage = require('../utils/fileStorage');
-const path = require('path');
 
-const BATCHES_FILE = path.join(__dirname, '../data/batches.json');
-const batchStorage = new FileStorage(BATCHES_FILE);
+const batchStorage = new FileStorage('batches');
 
 // Get all batches
 const getBatches = async (req, res) => {
@@ -78,7 +76,7 @@ const closeBatch = async (req, res) => {
   try {
     const batches = await batchStorage.read();
     const { id } = req.params;
-    const { closingCash, remarks, totalSales, cashSales, cardSales, transactions } = req.body;
+    const { closingCash, remarks, totalSales, cashSales, cardSales, transactions, receipts } = req.body;
 
     const batchIndex = batches.findIndex(b => b.id === parseInt(id));
 
@@ -94,6 +92,7 @@ const closeBatch = async (req, res) => {
       cashSales: parseFloat(cashSales) || 0,
       cardSales: parseFloat(cardSales) || 0,
       transactions: parseInt(transactions) || 0,
+      receipts: receipts || [],
       status: 'Closed',
       remarks: remarks || '',
       updatedAt: new Date().toISOString()

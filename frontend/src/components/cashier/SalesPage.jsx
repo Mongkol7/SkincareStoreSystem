@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card, { CardHeader } from '../common/Card';
 import Button from '../common/Button';
@@ -16,6 +16,7 @@ import {
   ReceiptPercentIcon,
   ClockIcon,
   EyeIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { useProducts } from '../../context/ProductContext';
 import api from '../../services/api';
@@ -23,7 +24,11 @@ import api from '../../services/api';
 const SalesPage = () => {
   const navigate = useNavigate();
   const { products, updateProduct, fetchProducts } = useProducts();
+
+  // ALL useState and hooks must be called before any conditional returns
   const [cart, setCart] = useState([]);
+  const [batchCheckLoading, setBatchCheckLoading] = useState(true);
+  const [hasActiveBatch, setHasActiveBatch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showCheckout, setShowCheckout] = useState(false);
@@ -34,7 +39,7 @@ const SalesPage = () => {
   const [recentReceipts, setRecentReceipts] = useState([
     {
       id: 'RCP-001',
-      date: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
+      date: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
       items: 3,
       total: 82.49,
       payment: 'Cash',
@@ -48,7 +53,7 @@ const SalesPage = () => {
     },
     {
       id: 'RCP-002',
-      date: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 minutes ago
+      date: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
       items: 2,
       total: 69.99,
       payment: 'Cash',
@@ -61,7 +66,7 @@ const SalesPage = () => {
     },
     {
       id: 'RCP-003',
-      date: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
+      date: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
       items: 5,
       total: 124.45,
       payment: 'Cash',
@@ -81,6 +86,101 @@ const SalesPage = () => {
       ...[...new Set(products.map(p => p.category))].map(c => ({ value: c, label: c }))
     ];
   }, [products]);
+
+  // Check if there's an active batch when component loads
+  useEffect(() => {
+    const checkActiveBatch = async () => {
+      try {
+        const batchId = localStorage.getItem('currentBatchId');
+        const lastBatchId = localStorage.getItem('lastBatchId');
+
+        if (!batchId) {
+          // No batch ID in localStorage
+          setHasActiveBatch(false);
+          setBatchCheckLoading(false);
+          return;
+        }
+
+        // Check if this is a new batch (different from last batch)
+        if (batchId !== lastBatchId) {
+          // Clear receipts for new batch
+          setRecentReceipts([]);
+          localStorage.setItem('lastBatchId', batchId);
+        }
+
+        // Verify the batch is still open
+        const response = await api.get(`/batches/${batchId}`);
+        const batch = response.data;
+
+        if (batch && batch.status === 'Open') {
+          setHasActiveBatch(true);
+        } else {
+          // Batch is closed, clear localStorage
+          localStorage.removeItem('currentBatchId');
+          setHasActiveBatch(false);
+        }
+      } catch (error) {
+        console.error('Error checking batch:', error);
+        // If batch doesn't exist or error, clear localStorage
+        localStorage.removeItem('currentBatchId');
+        setHasActiveBatch(false);
+      } finally {
+        setBatchCheckLoading(false);
+      }
+    };
+
+    checkActiveBatch();
+  }, []);
+
+  // Show loading state while checking batch
+  if (batchCheckLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card>
+          <div className="p-8 text-center">
+            <div className="text-white/60">Checking batch status...</div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show "Open Batch Required" message if no active batch
+  if (!hasActiveBatch) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <Card className="max-w-md w-full">
+          <div className="p-8">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="p-4 bg-warning-500/20 rounded-full">
+                <ExclamationTriangleIcon className="w-12 h-12 text-warning-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white">No Active Batch</h2>
+              <p className="text-white/80">
+                You need to open a batch before you can make sales. Please open a new batch to start your shift.
+              </p>
+              <div className="flex gap-3 mt-4 w-full">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => navigate('/cashier/dashboard')}
+                >
+                  Go to Dashboard
+                </Button>
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={() => navigate('/cashier/open-batch')}
+                >
+                  Open New Batch
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -287,7 +387,15 @@ const SalesPage = () => {
       };
 
       // Add to recent receipts (keep last 5)
-      setRecentReceipts([newReceipt, ...recentReceipts].slice(0, 5));
+      const updatedReceipts = [newReceipt, ...recentReceipts].slice(0, 5);
+      setRecentReceipts(updatedReceipts);
+
+      // Save receipts to localStorage for this batch
+      const batchId = localStorage.getItem('currentBatchId');
+      if (batchId) {
+        const receiptsKey = `batch_${batchId}_receipts`;
+        localStorage.setItem(receiptsKey, JSON.stringify(updatedReceipts));
+      }
 
       // Clear cart and close checkout
       setCart([]);

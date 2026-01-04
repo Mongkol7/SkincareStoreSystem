@@ -1,1 +1,56 @@
-[]
+[
+  {
+    "id": 1,
+    "batchNumber": "BATCH-20260104-001",
+    "date": "2026-01-04T17:14:09.506Z",
+    "openTime": "2026-01-04T17:14:09.506Z",
+    "closeTime": "2026-01-04T17:24:55.527Z",
+    "openingCash": 400,
+    "closingCash": 799.87,
+    "totalSales": 399.87,
+    "cashSales": 399.87,
+    "cardSales": 0,
+    "transactions": 4,
+    "status": "Closed",
+    "cashier": "Cashier User",
+    "remarks": "",
+    "createdAt": "2026-01-04T17:14:09.506Z",
+    "updatedAt": "2026-01-04T17:24:55.527Z"
+  },
+  {
+    "id": 2,
+    "batchNumber": "BATCH-20260104-002",
+    "date": "2026-01-04T17:37:05.071Z",
+    "openTime": "2026-01-04T17:37:05.071Z",
+    "closeTime": "2026-01-04T17:39:14.716Z",
+    "openingCash": 350,
+    "closingCash": 614.4,
+    "totalSales": 264.4,
+    "cashSales": 264.4,
+    "cardSales": 0,
+    "transactions": 2,
+    "status": "Closed",
+    "cashier": "Cashier User",
+    "remarks": "",
+    "createdAt": "2026-01-04T17:37:05.071Z",
+    "updatedAt": "2026-01-04T17:39:14.716Z"
+  },
+  {
+    "id": 3,
+    "batchNumber": "BATCH-20260104-003",
+    "date": "2026-01-04T17:39:32.263Z",
+    "openTime": "2026-01-04T17:39:32.263Z",
+    "closeTime": "2026-01-04T17:49:07.950Z",
+    "openingCash": 200,
+    "closingCash": 490.49,
+    "totalSales": 290.49,
+    "cashSales": 290.49,
+    "cardSales": 0,
+    "transactions": 2,
+    "status": "Closed",
+    "cashier": "Cashier User",
+    "remarks": "",
+    "createdAt": "2026-01-04T17:39:32.263Z",
+    "updatedAt": "2026-01-04T17:49:07.950Z"
+  }
+]
